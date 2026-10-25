@@ -14,11 +14,15 @@ const fail = msg => new AppError(msg, 400, 'message');
 // xssClean turns "<" into "&lt;"; these are shown with textContent, so undo it
 const text = (value, max) => String(value ?? '').replace(/&lt;/g, '<').trim().slice(0, max);
 
-// CODEX_ORIGINS: comma separated origins of the Codex website, e.g. https://codex.dev,https://www.codex.dev
+// Optional CODEX_ORIGINS: comma separated origins allowed to submit, e.g. https://codex.dev,https://www.codex.dev
+// When unset any site may submit (public form, no cookies, rate limited)
 const codexOrigins = () => (process.env.CODEX_ORIGINS || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
 
 exports.cors = cors({
-  origin: (origin, cb) => cb(null, codexOrigins().includes(origin)),
+  origin: (origin, cb) => {
+    const allowed = codexOrigins();
+    cb(null, !allowed.length || allowed.includes(origin));
+  },
   methods: ['POST'],
   allowedHeaders: ['Content-Type']
 });
