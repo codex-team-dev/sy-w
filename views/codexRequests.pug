@@ -1,0 +1,82 @@
+doctype html
+html(lang='ar' dir='rtl')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    meta(name='robots' content='noindex, nofollow')
+    title طلبات Codex | Studyou
+    link(rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css')
+    link(href='https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap' rel='stylesheet')
+    link(rel='stylesheet' href='/css/codexRequests.css')
+    link(rel='icon' type='image/svg+xml' href='/my-favicon/favicon.svg?v=20260916')
+  body
+    header.top
+      .top-inner
+        a.home-link(href='/' title='الصفحة الرئيسية' aria-label='الصفحة الرئيسية')
+          i.fa-solid.fa-house
+        .top-title
+          .top-icon
+            i.fa-solid.fa-code
+          div
+            h1 طلبات Codex
+            p طلبات الاستشارة المرسلة من موقع Codex
+    main.wrap
+      .tabs#tabs
+        button.on(data-s='all') الكل
+          b(data-c='all') 0
+        button(data-s='new') جديد
+          b(data-c='new') 0
+        button(data-s='contacted') تم التواصل
+          b(data-c='contacted') 0
+        button(data-s='done') مكتمل
+          b(data-c='done') 0
+      input#q.search(type='search' placeholder='ابحث بالاسم أو الهاتف أو مكان السكن أو الوصف')
+      .err#ge
+      #list.list
+      p#empty.empty(hidden) لا توجد طلبات
+    template#tpl
+      article.card
+        .ch
+          div
+            h3(data-f='name')
+            time(data-f='date')
+          select(data-f='status' aria-label='الحالة')
+            option(value='new') جديد
+            option(value='contacted') تم التواصل
+            option(value='done') مكتمل
+        dl
+          div
+            dt نوع المشروع
+            dd(data-f='projectType')
+          div
+            dt الميزانية
+            dd(data-f='budget')
+          div
+            dt الموعد
+            dd(data-f='deadline')
+          div
+            dt مكان السكن
+            dd(data-f='location')
+          div
+            dt الهاتف
+            dd(dir='ltr' data-f='phone')
+          div
+            dt البريد
+            dd(dir='ltr' data-f='email')
+        p.det(data-f='details')
+        textarea(data-f='note' placeholder='ملاحظات المشرف (تُحفظ تلقائياً)')
+        .ca
+          a.btn.wa(data-f='wa' target='_blank' rel='noopener')
+            i.fa-brands.fa-whatsapp
+            |  واتساب
+          a.btn.o(data-f='tel')
+            i.fa-solid.fa-phone
+            |  اتصال
+          a.btn.o(data-f='mail')
+            i.fa-solid.fa-envelope
+            |  بريد
+          button.btn.o.del(data-f='del')
+            i.fa-solid.fa-trash
+            |  حذف
+          span.saved(data-f='saved')
+    script(src='/js/codexRequests.js')

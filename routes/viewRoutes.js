@@ -401,6 +401,11 @@ router.get('/bot-admin', checkJWT, restrictTo('admin'), (req, res) => {
   res.status(200).render('botAdmin');
 });
 
+// Codex website consultation requests (hidden admin page, not linked anywhere)
+router.get('/codex-requests', checkJWT, restrictTo('admin'), (req, res) => {
+  res.status(200).render('codexRequests');
+});
+
 // PDF splitter (hidden admin tool, not linked anywhere); splitting happens in the browser
 router.get('/pdf-split', checkJWT, restrictTo('admin'), (req, res) => {
   res.status(200).render('pdfSplit');
