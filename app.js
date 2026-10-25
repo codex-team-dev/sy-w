@@ -65,6 +65,11 @@ app.use(xssProtecter());
 
 app.use(cookieParser());
 app.use(morgan('dev'));
+// Codex website (another domain) sends consultation requests here without logging in
+const codexRequests = require('./controllers/codexRequestController');
+app.options('/api/v1/codex-requests', codexRequests.cors);
+app.post('/api/v1/codex-requests', codexRequests.cors, codexRequests.submitLimiter, codexRequests.createRequest);
+
 const allowedOrigins = ['https://studyou.online', 'https://sy-w.onrender.com'];
 if(process.env.NODE_ENV !== 'production') allowedOrigins.push('http://127.0.0.1:3000', 'http://127.0.0.1:8080');
 app.use(cors({
@@ -157,6 +162,7 @@ app.use("/api/v1/saved-videos", savedVideosRouter);
 app.use('/api/v1/anki', require('./routes/ankiRoutes'));
 app.use('/api/v1/tests', require('./routes/generalTestRoutes'));
 app.use('/api/v1/bot', require('./routes/botRoutes'));
+app.use('/api/v1/codex-requests', require('./routes/codexRequestRoutes'));
 
 app.use(errorController);
 
