@@ -138,6 +138,12 @@ const signView = new SignView();
 
 const domain = document.body.dataset.domain;
 
+// back to the page that asked for sign in (e.g. a shared test link)
+const nextPage = (() => {
+  const next = new URLSearchParams(location.search).get("next") || "";
+  return /^\/(?![\/\\])/.test(next) ? next : "/";
+})();
+
 const signUpHandler = async function (e) {
   e.preventDefault();
   const data = signView.getInputDataSignup();
@@ -147,7 +153,7 @@ const signUpHandler = async function (e) {
   if (response.status === "success") {
     signView.showScucessMessage(); //TODO
     setTimeout(() => {
-      location.assign("/");
+      location.assign(nextPage);
     }, 2000);
   }
   if (response.status === "fail") signView.showError(response); //TODO
@@ -166,7 +172,7 @@ const loginHandler = async function (e) {
   if (response.status === "success") {
     signView.showScucessMessage("تم تسجيل الدخول بنجاح");
     setTimeout(() => {
-      location.assign("/");
+      location.assign(nextPage);
     }, 2500);
   }
   if (response.status === "fail") signView.showError(response, "login");

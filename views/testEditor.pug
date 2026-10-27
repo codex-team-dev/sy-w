@@ -1,7 +1,7 @@
 extends _layout
 
 block content
-  - const data = test ? { title: test.title, description: test.description, startAt: test.startAt, endAt: test.endAt, duration: test.duration, shuffle: test.shuffle, showAnswers: test.showAnswers, questions: test.questions.map(q => ({ text: q.text, choices: q.choices, correct: q.correct })) } : null
+  - const data = test ? { title: test.title, description: test.description, startAt: test.startAt, endAt: test.endAt, duration: test.duration, shuffle: test.shuffle, showAnswers: test.showAnswers, pool: test.pool, pick: test.pick, questions: test.questions.map(q => ({ text: q.text, choices: q.choices, correct: q.correct, difficulty: q.difficulty || 'medium' })) } : null
   main.anki-page.test-editor#test-editor(data-test-id=test ? test._id : '' data-test=JSON.stringify(data) data-locked=String(locked))
     .container-narrow
       a.back-link(href='/tests')
@@ -11,7 +11,7 @@ block content
       if locked
         .alert.alert-info
           i.fa-solid.fa-lock
-          span بدأ #{test.attemptsCount} طالب بتقديم الاختبار، لذلك لا يمكن تغيير الأسئلة أو المدة أو وقت البداية.
+          span بدأ #{test.attemptsCount} طالب بتقديم الاختبار، لذلك لا يمكن تغيير الأسئلة أو عدد الأسئلة المسحوبة أو المدة أو وقت البداية.
 
       form#test-form(novalidate)
         section.card-box
@@ -47,6 +47,20 @@ block content
             i.fa-solid.fa-list-ol
             |  الأسئلة
             span.count#questions-count 0
+          .diff-counts#diff-counts
+          label.check-row
+            input#pool(type='checkbox')
+            span سحب عدد عشوائي من الأسئلة لكل طالب
+          .pool-box#pool-box(hidden)
+            .pick-grid
+              each d in [['easy', 'سهل'], ['medium', 'متوسط'], ['hard', 'صعب']]
+                .field
+                  label.field-label(for=`pick-${d[0]}`)
+                    span.diff-dot(class=`diff-${d[0]}`)
+                    |  #{d[1]}
+                  input.input.pick-input(id=`pick-${d[0]}` type='number' min='0' value='0' data-diff=d[0])
+                  small.field-hint.pick-available(data-diff=d[0])
+            p.pool-total#pool-total
           ol.editor-questions#questions
           if !locked
             button.btn.btn-ghost#add-question(type='button')

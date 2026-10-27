@@ -4,7 +4,10 @@ const TestAttempt = require('./../models/testAttemptModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/AppError');
 
-const MAX_QUESTIONS = 100;
+const MAX_QUESTIONS = 300;
+const DIFFICULTIES = GeneralTest.DIFFICULTIES;
+const DIFFICULTY_NAMES = { easy: 'سهل', medium: 'متوسط', hard: 'صعب' };
+const DIFFICULTY_PLURALS = { easy: 'السهلة', medium: 'المتوسطة', hard: 'الصعبة' };
 
 const clean = v => typeof v === 'string' ? v.trim() : '';
 const fail = message => new AppError(message, 400, 'message');
@@ -54,10 +57,25 @@ const buildTest = function(body) {
     if(choices.some(c => !c)) return { error: `لا يمكن ترك خيار فارغ في السؤال ${n}` };
     if(choices.some(c => c.length > 300)) return { error: `أحد خيارات السؤال ${n} طويل جداً` };
     if(!Number.isInteger(correct) || correct < 0 || correct >= choices.length) return { error: `اختر الإجابة الصحيحة للسؤال ${n}` };
-    questions.push({ text, choices, correct });
+    const difficulty = DIFFICULTIES.includes(q.difficulty) ? q.difficulty : 'medium';
+    questions.push({ text, choices, correct, difficulty });
   }
 
-  return { data: { title, description, startAt, endAt, duration, questions, shuffle: !!body.shuffle, showAnswers: !!body.showAnswers } };
+  const pool = !!body.pool;
+  const pick = { easy: 0, medium: 0, hard: 0 };
+  if(pool) {
+    const rawPick = body.pick && typeof body.pick === 'object' ? body.pick : {};
+    for(const d of DIFFICULTIES) {
+      const count = Number(rawPick[d] || 0);
+      if(!Number.isInteger(count) || count < 0) return { error: `عدد الأسئلة ${DIFFICULTY_PLURALS[d]} غير صحيح` };
+      const available = questions.filter(q => q.difficulty === d).length;
+      if(count > available) return { error: `يوجد ${available} سؤال ${DIFFICULTY_NAMES[d]} فقط، لا يمكن سحب ${count}` };
+      pick[d] = count;
+    }
+    if(!(pick.easy + pick.medium + pick.hard)) return { error: 'حدد عدد الأسئلة التي تظهر لكل طالب' };
+  }
+
+  return { data: { title, description, startAt, endAt, duration, questions, pool, pick, shuffle: !!body.shuffle, showAnswers: !!body.showAnswers } };
 };
 
 exports.createTest = catchAsync(async function(req, res, next) {
@@ -68,7 +86,9 @@ exports.createTest = catchAsync(async function(req, res, next) {
 });
 
 const sameQuestions = (test, data) =>
-  JSON.stringify(test.questions.map(q => ({ text: q.text, choices: [...q.choices], correct: q.correct }))) === JSON.stringify(data.questions);
+  JSON.stringify(test.questions.map(q => ({ text: q.text, choices: [...q.choices], correct: q.correct, difficulty: q.difficulty || 'medium' }))) === JSON.stringify(data.questions);
+const samePool = (test, data) =>
+  !!test.pool === data.pool && (!data.pool || DIFFICULTIES.every(d => ((test.pick || {})[d] || 0) === data.pick[d]));
 
 exports.updateTest = catchAsync(async function(req, res, next) {
   const test = await findTest(req.params.testId);
@@ -77,7 +97,7 @@ exports.updateTest = catchAsync(async function(req, res, next) {
   if(error) return next(fail(error));
 
   // users already started: what they answered and how long they had must stay the same
-  if(test.attemptsCount && (!sameQuestions(test, data) || data.shuffle !== test.shuffle ||
+  if(test.attemptsCount && (!sameQuestions(test, data) || !samePool(test, data) || data.shuffle !== test.shuffle ||
     data.duration !== test.duration || +data.startAt !== +test.startAt))
     return next(fail('بدأ طلاب بتقديم هذا الاختبار، يمكن تعديل العنوان والوصف ووقت النهاية وإظهار الإجابات فقط'));
 
@@ -123,6 +143,17 @@ const payloadOf = (test, attempt) => ({
   })
 });
 
+// indexes of the questions one user answers, in the order they are shown
+const pickQuestions = function(test) {
+  let order = range(test.questions.length);
+  if(test.pool) {
+    order = DIFFICULTIES.flatMap(d =>
+      shuffle(order.filter(qi => (test.questions[qi].difficulty || 'medium') === d)).slice(0, (test.pick || {})[d] || 0));
+    order.sort((a, b) => a - b);
+  }
+  return test.shuffle ? shuffle(order) : order;
+};
+
 exports.startTest = catchAsync(async function(req, res, next) {
   const test = await findTest(req.params.testId);
   if(!test) return next(testNotFound());
@@ -133,12 +164,14 @@ exports.startTest = catchAsync(async function(req, res, next) {
 
   let attempt = await TestAttempt.findOne({ test: test._id, user: req.user._id });
   if(!attempt) {
-    const order = range(test.questions.length);
-    const choiceOrder = test.questions.map(q => range(q.choices.length));
-    if(test.shuffle) {
-      shuffle(order);
-      choiceOrder.forEach(shuffle);
-    }
+    const order = pickQuestions(test);
+    const picked = new Set(order);
+    // choice orders are kept by question index; questions not picked get none
+    const choiceOrder = test.questions.map((q, qi) => {
+      if(!picked.has(qi)) return [];
+      const choices = range(q.choices.length);
+      return test.shuffle ? shuffle(choices) : choices;
+    });
     try {
       attempt = await TestAttempt.create({
         test: test._id,
@@ -166,8 +199,10 @@ exports.startTest = catchAsync(async function(req, res, next) {
 const applyAnswers = function(attempt, test, answers) {
   if(!answers || typeof answers !== 'object') return;
   const list = [...attempt.answers];
+  // only the questions this user was given
+  const given = new Set(attempt.order);
   Object.entries(answers).forEach(([qi, ci]) => {
-    const q = test.questions[Number(qi)];
+    const q = given.has(Number(qi)) && test.questions[Number(qi)];
     ci = Number(ci);
     if(!q || !Number.isInteger(ci) || ci < -1 || ci >= q.choices.length) return;
     list[Number(qi)] = ci;
@@ -204,10 +239,10 @@ exports.submitTest = catchAsync(async function(req, res, next) {
 // once the test is over: score every attempt (finished or not) and give dense ranks
 exports.finalizeResults = async function(test) {
   if(test.resultsReady || Date.now() < test.endAt.getTime()) return;
-  const attempts = await TestAttempt.find({ test: test._id }).select('answers');
+  const attempts = await TestAttempt.find({ test: test._id }).select('answers order');
   const scored = attempts.map(a => ({
     id: a._id,
-    score: a.answers.reduce((sum, ci, qi) => sum + (test.questions[qi] && ci === test.questions[qi].correct ? 1 : 0), 0)
+    score: a.order.reduce((sum, qi) => sum + (test.questions[qi] && a.answers[qi] === test.questions[qi].correct ? 1 : 0), 0)
   }));
   const marks = [...new Set(scored.map(s => s.score))].sort((a, b) => b - a);
   const rankOf = new Map(marks.map((mark, i) => [mark, i + 1]));

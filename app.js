@@ -57,6 +57,8 @@ app.use(helmet({
 
 
 
+// a test with a big question pool is sent in one request
+app.use('/api/v1/tests', express.json({ limit: '1mb' }));
 app.use(express.json({ limit: '100kb' }));
 
 // Data sanitization againt NoSQL query injection, XSS

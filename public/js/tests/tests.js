@@ -41,5 +41,15 @@ const Tests = (() => {
     Anki.toast(deleted.message);
   }));
 
+  document.querySelectorAll('.copy-test-link').forEach(btn => btn.addEventListener('click', async () => {
+    const link = location.origin + btn.dataset.link;
+    try {
+      await navigator.clipboard.writeText(link);
+      Anki.toast('تم نسخ رابط الاختبار');
+    } catch (err) {
+      window.prompt('رابط الاختبار', link);
+    }
+  }));
+
   return { left, formatTime };
 })();

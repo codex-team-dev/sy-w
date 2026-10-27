@@ -1,4 +1,4 @@
-/* Admin test editor: info + questions (2-6 choices, one correct) */
+/* Admin test editor: info + questions (2-6 choices, one correct, a difficulty) + optional random pool */
 (() => {
   const page = document.getElementById('test-editor');
   if (!page) return;
@@ -11,6 +11,9 @@
   const count = document.getElementById('questions-count');
   const $ = id => document.getElementById(id);
   let uid = 0;
+  const DIFFS = { easy: 'سهل', medium: 'متوسط', hard: 'صعب' };
+  const poolBox = $('pool-box');
+  const pickInputs = [...document.querySelectorAll('.pick-input')];
 
   // Date -> value of <input type="datetime-local"> in the admin's time zone
   const toLocal = d => { const dt = new Date(d); return new Date(dt - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
@@ -27,13 +30,14 @@
     return row;
   };
 
-  const addQuestion = function (q = { text: '', choices: ['', '', '', ''], correct: 0 }) {
+  const addQuestion = function (q = { text: '', choices: ['', '', '', ''], correct: 0, difficulty: 'medium' }) {
     const name = `correct-${uid++}`;
     const li = document.createElement('li');
     li.className = 'q-edit';
     li.innerHTML = `
       <div class="q-edit-head"><span class="q-num"></span>
         <div class="q-edit-tools">
+          <select class="input q-diff" aria-label="صعوبة السؤال">${Object.entries(DIFFS).map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>
           <button type="button" class="icon-btn sm move-q-up" title="للأعلى" aria-label="تحريك السؤال للأعلى"><i class="fa-solid fa-chevron-up"></i></button>
           <button type="button" class="icon-btn sm move-q-down" title="للأسفل" aria-label="تحريك السؤال للأسفل"><i class="fa-solid fa-chevron-down"></i></button>
           <button type="button" class="icon-btn danger remove-question" title="حذف السؤال" aria-label="حذف السؤال"><i class="fa-solid fa-trash"></i></button>
@@ -43,6 +47,9 @@
       <div class="q-choices"></div>
       <button type="button" class="btn-chip add-choice"><i class="fa-solid fa-plus"></i> خيار</button>`;
     li.querySelector('.q-text').value = q.text;
+    const diff = li.querySelector('.q-diff');
+    diff.value = DIFFS[q.difficulty] ? q.difficulty : 'medium';
+    li.dataset.diff = diff.value;
     const box = li.querySelector('.q-choices');
     q.choices.forEach((c, i) => box.appendChild(choiceRow(name, c, i === q.correct)));
     li.dataset.name = name;
@@ -61,8 +68,36 @@
       li.querySelectorAll('.remove-choice').forEach(b => { b.hidden = locked || rows.length <= 2; });
     });
     count.textContent = items.length;
-    if (locked) list.querySelectorAll('input, textarea, button').forEach(el => { el.disabled = true; });
+    refreshPool();
+    if (locked) list.querySelectorAll('input, textarea, button, select').forEach(el => { el.disabled = true; });
   };
+
+  const available = d => list.querySelectorAll(`.q-edit[data-diff="${d}"]`).length;
+
+  const refreshPool = function () {
+    $('diff-counts').innerHTML = Object.entries(DIFFS)
+      .map(([d, t]) => `<span class="diff-chip diff-${d}">${t}: ${available(d)}</span>`).join('');
+    poolBox.hidden = !$('pool').checked;
+    let total = 0, over = false;
+    pickInputs.forEach(input => {
+      const d = input.dataset.diff, max = available(d), n = Math.max(0, Math.floor(Number(input.value) || 0));
+      input.max = max;
+      input.classList.toggle('invalid', n > max);
+      over = over || n > max;
+      total += n;
+      poolBox.querySelector(`.pick-available[data-diff="${d}"]`).textContent = `من أصل ${max}`;
+    });
+    $('pool-total').textContent = over ? 'العدد المطلوب أكبر من عدد الأسئلة المتاحة' : `كل طالب يحصل على ${total} سؤال عشوائي`;
+    $('pool-total').classList.toggle('is-error', over || !total);
+  };
+
+  list.addEventListener('change', e => {
+    if (!e.target.classList.contains('q-diff')) return;
+    e.target.closest('.q-edit').dataset.diff = e.target.value;
+    refreshPool();
+  });
+  $('pool').addEventListener('change', refreshPool);
+  pickInputs.forEach(input => input.addEventListener('input', refreshPool));
 
   list.addEventListener('click', e => {
     const li = e.target.closest('.q-edit');
@@ -92,8 +127,11 @@
     $('duration').value = initial.duration;
     $('shuffle').checked = initial.shuffle;
     $('showAnswers').checked = initial.showAnswers;
+    $('pool').checked = !!initial.pool;
+    pickInputs.forEach(input => { input.value = (initial.pick && initial.pick[input.dataset.diff]) || 0; });
     initial.questions.forEach(addQuestion);
-    if (locked) ['startAt', 'duration', 'shuffle'].forEach(id => { $(id).disabled = true; });
+    if (locked) ['startAt', 'duration', 'shuffle', 'pool'].forEach(id => { $(id).disabled = true; });
+    if (locked) pickInputs.forEach(input => { input.disabled = true; });
   } else {
     // default: starts in one hour, open for one day
     const start = new Date(Date.now() + 3600000);
@@ -115,10 +153,13 @@
       duration: Number($('duration').value),
       shuffle: $('shuffle').checked,
       showAnswers: $('showAnswers').checked,
+      pool: $('pool').checked,
+      pick: Object.fromEntries(pickInputs.map(input => [input.dataset.diff, Math.max(0, Math.floor(Number(input.value) || 0))])),
       questions: [...list.children].map(li => {
         const rows = [...li.querySelectorAll('.choice-edit')];
         return {
           text: li.querySelector('.q-text').value,
+          difficulty: li.querySelector('.q-diff').value,
           choices: rows.map(r => r.querySelector('.choice-text').value),
           correct: rows.findIndex(r => r.querySelector('input[type=radio]').checked)
         };
