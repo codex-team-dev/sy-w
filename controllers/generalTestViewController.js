@@ -13,7 +13,7 @@ exports.getTests = catchAsync(async function(req, res, next) {
   const user = res.locals.user;
   if(!user) return res.status(200).render('toSign');
   const now = Date.now();
-  const tests = await GeneralTest.find().select('title description startAt endAt duration attemptsCount questions._id').sort({ startAt: -1 }).limit(150);
+  const tests = await GeneralTest.find().select('title description startAt endAt duration attemptsCount questions._id pool pick').sort({ startAt: -1 }).limit(150);
   const attempts = await TestAttempt.find({ user: user._id, test: { $in: tests.map(t => t._id) } }).select('test submittedAt deadline');
   const status = {};
   attempts.forEach(a => { status[a.test.toString()] = a.isFinished(now) ? 'done' : 'started'; });
@@ -45,7 +45,7 @@ exports.getTest = catchAsync(async function(req, res, next) {
     user,
     test: infoOf(test),
     state,
-    questionsCount: test.questions.length,
+    questionsCount: test.questionsPerUser(),
     attemptState: !attempt ? 'new' : attempt.isFinished(now) ? 'done' : 'started',
     // a user starting now gets the time left until the end if it is shorter
     availableMinutes: Math.min(test.duration, (test.endAt.getTime() - now) / 60000)
@@ -57,7 +57,7 @@ exports.getResults = catchAsync(async function(req, res, next) {
   if(!user) return res.status(200).render('toSign');
   const test = await findTest(req.params.testId);
   if(!test) return next(testNotFound());
-  const view = { ...layout, pageTitle: `نتائج ${test.title}`, user, test: infoOf(test), total: test.questions.length };
+  const view = { ...layout, pageTitle: `نتائج ${test.title}`, user, test: infoOf(test), total: test.questionsPerUser() };
 
   if(test.stateAt() !== 'ended') return res.status(200).render('testResults', { ...view, pending: true });
 
@@ -75,7 +75,10 @@ exports.getResults = catchAsync(async function(req, res, next) {
     .map(p => ({ rank: p.rank, score: p.attempts[0].score, names: p.attempts.map(a => a.user ? a.user.name : '—') }));
 
   const review = mine && test.showAnswers
-    ? test.questions.map((q, qi) => ({ text: q.text, choices: q.choices, correct: q.correct, chosen: mine.answers[qi] }))
+    ? [...mine.order].sort((a, b) => a - b).map(qi => {
+      const q = test.questions[qi];
+      return { text: q.text, choices: q.choices, correct: q.correct, chosen: mine.answers[qi] };
+    })
     : null;
 
   res.status(200).render('testResults', { ...view, pending: false, podium, mine, review, all, participants: test.attemptsCount });

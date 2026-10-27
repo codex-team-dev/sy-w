@@ -28,7 +28,7 @@ block content
                 |  #{t.duration} دقيقة
               span
                 i.fa-solid.fa-list-ol
-                |  #{t.questions.length} سؤال
+                |  #{t.questionsPerUser()} سؤال
               if state === 'live'
                 span.live-ends
                   | ينتهي بعد 
@@ -62,6 +62,8 @@ block content
                 i.fa-solid.fa-trophy
                 |  النتائج
             if user.role === 'admin'
+              button.icon-btn.copy-test-link(type='button' data-link=`/tests/${t._id}` title='نسخ رابط الاختبار' aria-label='نسخ رابط الاختبار')
+                i.fa-solid.fa-link
               a.icon-btn(href=`/tests/${t._id}/edit` title='تعديل' aria-label='تعديل الاختبار')
                 i.fa-solid.fa-pen
               button.icon-btn.danger.delete-test-btn(type='button' data-test-id=t._id title='حذف' aria-label='حذف الاختبار')
