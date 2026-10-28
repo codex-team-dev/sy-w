@@ -56,6 +56,7 @@ router.get("/", checkJWT, catchAsync(async (req, res) => {
   res.status(200).render("mainpage", {
     user,
     homeCourses,
+    homeCourseId: HOME_COURSE_ID,
     myCourses,
     title: "الصفحة الرئيسية",
     metaContent: `الدكتور إياد سكر
@@ -296,6 +297,10 @@ router.get("/classes/:classId/edit-course/:courseId", checkJWT, restrictTo("admi
     });
   })
 );
+
+router.get("/courses/:courseId/upload-subcourse", checkJWT, restrictTo("admin"), (req, res) => {
+  res.status(200).render("uploadSubcourse");
+});
 
 router.get("/courses/:courseId/edit-subcourse/:subcourseId", checkJWT, restrictTo("admin"), catchAsync(async (req, res) => {
     const { subcourseId } = req.params;

@@ -1,0 +1,28 @@
+extends _adminForm
+
+block vars
+  - var pageTitle = 'إضافة كورس'
+  - var pageIcon = 'fa-book-open'
+  - var pageSub = 'يظهر الكورس في الصفحة الرئيسية'
+  - var pageScript = 'uploadSubcourse'
+  - var bodyData = {}
+
+block form
+    .container
+      .form
+        .field
+          label(for='subcourse-name') اسم الكورس
+          input#subcourse-name.input(type='text')
+        .field
+          label(for='subcourse-des') الوصف
+          textarea#subcourse-des.input(rows='4')
+        .field
+          label(for='image') اسم الصورة
+          input#image.input(type='text', dir='ltr', placeholder='hormones.jpg')
+        .field
+          label(for='price') السعر
+          input#price.input(type='number', min='0')
+        label.check-row(for='coming-soon')
+          input#coming-soon(type='checkbox')
+          span قريبا (يظهر في الصفحة الرئيسية بدون إمكانية الشراء)
+        button.btn-sub(type='button') رفع

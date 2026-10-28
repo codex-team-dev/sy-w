@@ -1406,3 +1406,7 @@ html { scroll-behavior: smooth; }
 .notifi.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
 ::selection { background: rgba(124, 58, 237, 0.22); }
+
+.courses-admin { display: flex; justify-content: center; margin: -20px 0 24px; }
+.courses-admin-link { padding: 8px 18px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
+.course-admin-edit { position: absolute; top: 12px; left: 12px; z-index: 2; padding: 4px 12px; border-radius: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
