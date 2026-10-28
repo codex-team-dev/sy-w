@@ -1020,14 +1020,29 @@ body.page-dark-mode .own-chip.is-rank { background: rgba(245, 158, 11, .16); col
 .approval-badge.pending { background: var(--amber-light); color: var(--amber-dark); }
 .approval-badge.rejected { background: var(--red-light); color: var(--red); }
 
-.group-tree { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.tree-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; margin-inline-start: calc(var(--depth, 0) * 22px); border: 1px solid var(--border); border-radius: 12px; }
+/* inner groups: each level has its own color, children sit inside their parent with connector lines */
+.group-tree, .tree-children { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.tree-node.level-1 { --c: var(--primary); --c-bg: var(--primary-light); }
+.tree-node.level-2 { --c: var(--green); --c-bg: var(--green-light); }
+.tree-node.level-3 { --c: var(--amber); --c-bg: var(--amber-light); }
+.tree-node.level-4 { --c: var(--sky); --c-bg: var(--sky-light); }
+.tree-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border); border-inline-start: 4px solid var(--c); border-radius: 12px; }
+.tree-item.is-folder { background: var(--c-bg); border-color: var(--c); cursor: pointer; list-style: none; }
+.tree-item.is-folder::-webkit-details-marker { display: none; }
+.tree-item.is-folder::marker { content: ''; }
 .tree-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tree-text strong { color: var(--heading); overflow-wrap: anywhere; }
-.tree-text strong i { color: var(--primary); }
+.tree-text strong i { color: var(--c); }
+.tree-toggle { margin-inline-end: 6px; font-size: .8rem; transition: transform .2s; }
+.tree-branch:not([open]) > summary .tree-toggle { transform: rotate(90deg); }
 .tree-text small { color: var(--muted); font-size: .82rem; }
 .tree-actions { display: flex; gap: 6px; }
 .tree-actions .due-count { margin-inline-start: 6px; }
+.tree-children { --rail: var(--c); margin-top: 8px; margin-inline-start: 14px; padding-inline-start: 22px; }
+.tree-children > .tree-node { position: relative; }
+.tree-children > .tree-node::before { content: ''; position: absolute; inset-inline-start: -22px; top: -8px; bottom: 0; border-inline-start: 2px solid var(--rail); }
+.tree-children > .tree-node:last-child::before { bottom: auto; height: 31px; }
+.tree-children > .tree-node::after { content: ''; position: absolute; inset-inline-start: -22px; top: 22px; width: 20px; border-top: 2px solid var(--rail); }
 
 .pending-cards-section { margin-top: 28px; }
 .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; color: var(--heading); font-size: 1.15rem; }
@@ -1036,7 +1051,9 @@ body.page-dark-mode .own-chip.is-rank { background: rgba(245, 158, 11, .16); col
 
 @media (max-width: 600px) {
     .card-item-actions { flex-wrap: wrap; justify-content: flex-end; }
-    .tree-item { margin-inline-start: calc(var(--depth, 0) * 12px); }
+    .tree-children { margin-inline-start: 6px; padding-inline-start: 14px; }
+    .tree-children > .tree-node::before, .tree-children > .tree-node::after { inset-inline-start: -14px; }
+    .tree-children > .tree-node::after { width: 12px; }
 }
 
 .edit-compare { flex-wrap: wrap; }
