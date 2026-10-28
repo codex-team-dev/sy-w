@@ -165,6 +165,9 @@ body(data-domain= domain)
       .section-inner
         h2.section-title &#x643;&#x648;&#x631;&#x633;&#x627;&#x62A;&#x646;&#x627; &#x627;&#x644;&#x645;&#x62A;&#x627;&#x62D;&#x629;
         p.section-subtitle &#x644;&#x644;&#x639;&#x627;&#x645; 2026/2027
+        if user && user.role === 'admin'
+          .courses-admin
+            a.courses-admin-link(href=`/courses/${homeCourseId}/upload-subcourse`) + إضافة كورس
         .courses-grid
           if !homeCourses.length
             p.courses-empty سيتم نشر الكورسات قريبا
@@ -177,6 +180,8 @@ body(data-domain= domain)
                   .course-badge.badge-soon قريبا
                 else if owned
                   .course-badge.badge-owned مشترك
+                if user && user.role === 'admin'
+                  a.course-admin-edit(href=`/courses/${homeCourseId}/edit-subcourse/${c._id}`) تعديل
               .course-body
                 h3= c.title
                 p= c.description

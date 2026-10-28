@@ -26,12 +26,18 @@ exports.getSubcourses = catchAsync(async function(req, res, next) {
 exports.createSubcourse = catchAsync(async function(req, res, next) {
   const { title, description, photoUrl, price } = req.body;
   const { courseId } = req.params;
-  if(!(await Course.findById(courseId))) return next(new AppError('هذا الكورس غير موجود', 400));
+  if(!(await Course.findById(courseId))) return next(new AppError('هذا الكورس غير موجود', 400, 'message'));
 
-  const subcourse = await Subcourse.create({title, description, photoUrl, price, course: courseId});
+  if(!title) return next(new AppError('الرجاء ادخال عنوان الكورس', 400, 'message'));
+  if(!description) return next(new AppError('الرجاء ادخال الوصف', 400, 'message'));
+  if(!photoUrl) return next(new AppError('الرجاء ادخال الصورة', 400, 'message'));
+  if(price === undefined || price === '' || Number.isNaN(Number(price)) || Number(price) < 0) return next(new AppError('الرجاء ادخال سعر', 400, 'message'));
+
+  const subcourse = await Subcourse.create({title, description, photoUrl, price: Number(price), course: courseId, comingSoon: req.body.comingSoon === true});
 
   res.status(201).json({
     status: "success",
+    message: 'تم رفع الكورس بنجاح',
     data: {
       subcourse
     }
