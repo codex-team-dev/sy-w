@@ -257,31 +257,50 @@ mixin breadcrumbs(crumbs, urlOf, current)
         i.fa-solid.fa-chevron-left(aria-hidden='true')
       span(aria-current='page')= current
 
-//- public pages: inner groups of a group, each one can be studied alone
+//- public pages: inner groups of a group, each one can be studied alone.
+//- tree is flat (depth-first + depth); rebuilt here so every group is drawn inside its parent
 mixin groupTree(tree, treeProgress)
   if tree && tree.length
+    - const roots = [], stack = []
+    - tree.forEach(t => { const node = { group: t.group, depth: t.depth, kids: [] }; while(stack.length && stack[stack.length - 1].depth >= t.depth) stack.pop(); (stack.length ? stack[stack.length - 1].kids : roots).push(node); stack.push(node); })
     section.card-box
       h2
         i.fa-solid.fa-folder-tree
         | محتوى المجموعة
       ul.group-tree
-        each item in tree
-          - const g = item.group
-          - const p = treeProgress[g._id.toString()]
-          li.tree-item(style=`--depth:${item.depth - 1}`)
-            .tree-text
-              strong
-                i.fa-solid(class=g.childrenCount ? 'fa-folder-open' : 'fa-folder')
-                |  #{g.name}
-              small= g.childrenCount ? `${g.childrenCount} مجموعة · ${g.cardsCount} بطاقة` : `${g.cardsCount} بطاقة`
-            if g.cardsCount
-              .tree-actions
-                a.btn.btn-ghost.btn-sm(href=`/anki/groups/${g._id}/study`)
-                  i.fa-solid.fa-book-open
-                  |  دراسة
-                if p && p.started
-                  a.btn.btn-ghost.btn-sm(href=`/anki/groups/${g._id}/study?mode=revision`)
-                    i.fa-solid.fa-rotate
-                    |  مراجعة
-                    if p.dueNow
-                      span.due-count= p.dueNow
+        each node in roots
+          +groupTreeNode(node, treeProgress)
+
+mixin groupTreeNode(node, treeProgress)
+  li.tree-node(class=`level-${(node.depth - 1) % 4 + 1}`)
+    if node.kids.length
+      details.tree-branch(open)
+        summary.tree-item.is-folder
+          +groupTreeRow(node.group, treeProgress, true)
+        ul.tree-children
+          each kid in node.kids
+            +groupTreeNode(kid, treeProgress)
+    else
+      .tree-item
+        +groupTreeRow(node.group, treeProgress, false)
+
+mixin groupTreeRow(g, treeProgress, isFolder)
+  - const p = treeProgress[g._id.toString()]
+  .tree-text
+    strong
+      if isFolder
+        i.fa-solid.fa-chevron-down.tree-toggle(aria-hidden='true')
+      i.fa-solid(class=isFolder ? 'fa-folder-open' : 'fa-folder')
+      |  #{g.name}
+    small= g.childrenCount ? `${g.childrenCount} مجموعة · ${g.cardsCount} بطاقة` : `${g.cardsCount} بطاقة`
+  if g.cardsCount
+    .tree-actions
+      a.btn.btn-ghost.btn-sm(href=`/anki/groups/${g._id}/study`)
+        i.fa-solid.fa-book-open
+        |  دراسة
+      if p && p.started
+        a.btn.btn-ghost.btn-sm(href=`/anki/groups/${g._id}/study?mode=revision`)
+          i.fa-solid.fa-rotate
+          |  مراجعة
+          if p.dueNow
+            span.due-count= p.dueNow
