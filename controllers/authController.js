@@ -5,6 +5,9 @@ const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/AppError');
 const sendMail = require('./../utils/email.js');
 const crypto = require('crypto');
+const BAD_CREDENTIALS = 'Validation Error: الاسم أو كلمة السر غير صحيحة';
+// a real hash to compare against when the account does not exist (constant-time-ish login)
+const DUMMY_HASH = bcrypt.hashSync('unused-placeholder-password', 12);
 const { promisify } = require('util');
 const Workshop = require('./../models/workshopsModel.js');
 const Lesson = require('./../models/lessonModel');
@@ -120,7 +123,13 @@ exports.login = catchAsync(async function(req, res, next) {
   if(!password) return next(new AppError('Validation Error: الرجاء ادخال كلمة السر', 400, 'password'));
 
   const user = await User.findOne({name, active: true}).select('+role');
-  if(!user) return next(new AppError('Validation Error: هذا المستخدم غير موجود', 404, 'name'));
+  // Same message/status whether the name or the password is wrong, so the login form
+  // cannot be used to discover which accounts exist. The dummy compare keeps the
+  // response time of an unknown name close to that of a wrong password.
+  if(!user) {
+    await bcrypt.compare(password, DUMMY_HASH);
+    return next(new AppError(BAD_CREDENTIALS, 400, 'password'));
+  }
 
   if(user.role !== 'admin'){
 
@@ -144,7 +153,7 @@ exports.login = catchAsync(async function(req, res, next) {
   }
 }
 
-  if(!(await user.correctPassword(password, user.password))) return next(new AppError('Validation Error: كلمة السر خاطئة حاول مجددا', 400, 'password'));
+  if(!(await user.correctPassword(password, user.password))) return next(new AppError(BAD_CREDENTIALS, 400, 'password'));
 
   const token = signToken(user);
 

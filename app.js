@@ -38,6 +38,8 @@ const overallLimiter = limiter({ windowMs: 6 * 1000, limit: 110, keyGenerator: u
 const apiLimiter = limiter({ windowMs: 6 * 1000, limit: 15, keyGenerator: userOrIp });
 const loginLimiter = limiter({ windowMs: 15 * 60 * 1000, limit: 10, skipSuccessfulRequests: true });
 const signupLimiter = limiter({ windowMs: 60 * 60 * 1000, limit: 20 });
+// redeem codes are admin-chosen strings: throttle hard so they cannot be brute-forced
+const codeLimiter = limiter({ windowMs: 10 * 60 * 1000, limit: 10, keyGenerator: userOrIp, skipSuccessfulRequests: true });
 
 app.use('/api/v1/users/signup', signupLimiter);
 app.use('/api/v1/users/login', loginLimiter);
@@ -95,6 +97,8 @@ app.use((req, res, next) => {
 
 app.use('/', checkLink, checkJWT, overallLimiter);
 app.use('/api', checkLink, checkJWT, apiLimiter);
+// after checkJWT so the limit is keyed per user, not per shared IP
+app.use('/api/v1/codes/activate-code', codeLimiter);
 
 // files in public/tests; anything else (/tests/new, /tests/:testId...) goes on to the general tests pages
 app.use('/tests', express.static(path.join(__dirname, 'public', 'tests'), { index: false, redirect: false }));
