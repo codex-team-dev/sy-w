@@ -79,6 +79,20 @@ app.use(cors({
   credentials: true
 }));
 
+// CSRF defense-in-depth: the auth cookie is SameSite=Lax, so browsers already
+// withhold it on cross-site state-changing requests. On top of that, reject any
+// state-changing request whose Origin header is present but not in our allowlist.
+// (The public cross-origin codex-requests POST is registered above this point.)
+const stateChangingMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+app.use((req, res, next) => {
+  if(!stateChangingMethods.has(req.method)) return next();
+  const origin = req.get('origin');
+  if(origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({ status: 'fail', message: 'طلب غير مسموح من مصدر خارجي' });
+  }
+  next();
+});
+
 app.use('/', checkLink, checkJWT, overallLimiter);
 app.use('/api', checkLink, checkJWT, apiLimiter);
 
