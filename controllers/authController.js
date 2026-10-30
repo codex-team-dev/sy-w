@@ -100,7 +100,7 @@ exports.signup = catchAsync(async function(req, res, next) {
     const cookieOptions = {
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       httpOnly: true,
-      sameSite: `${process.env.NODE_ENV === 'production' ? "None" : "Lax"}`,
+      sameSite: 'Lax',
       path: '/'
     };
 
@@ -151,7 +151,7 @@ exports.login = catchAsync(async function(req, res, next) {
   const cookieOptions = {
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    sameSite: `${process.env.NODE_ENV === 'production' ? "None" : "Lax"}`,
+    sameSite: 'Lax',
     path: '/'
   };
 
