@@ -10,7 +10,7 @@ router.post('/logout', logout);
 router.post('/update-password', checkJWT, updatePassword);
 router.post('/update-email-name', checkJWT, updateEmailName);
 router.post('/check-activated-subcourse', checkJWT, checkActivatedSubcourse);
-router.post('/update-certain-password', updateCertainPassword);
+router.post('/update-certain-password', checkJWT, restrictTo('admin'), updateCertainPassword);
 router.post('/activate-user', checkJWT, restrictTo('admin'), activateUser);
 router.post('/add-package', checkJWT, restrictTo('admin'), addPackage);
 router.post('/update-progress', checkJWT, checkActivatedSubcourse, updateProgress);

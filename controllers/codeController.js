@@ -40,7 +40,6 @@ exports.createCodes = catchAsync(async function(req, res, next) {
 })
 
 exports.activateCode = catchAsync(async function(req, res, next) {
-  console.log(req.user.subcourses);
   const { code } = req.body;
    
   try{

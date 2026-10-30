@@ -259,7 +259,6 @@ exports.updateCertainPassword = catchAsync(async function(req, res, next) {
 
   const user = await User.findOne({name: userID});
 
-  console.log(user);
 
   if(!password) return next(new AppError('الرجاء ادخال كلمة السر الجديدة', 400, 'password'));
   if(!user) return next(new AppError('الرجاء ادخال المستخدم', 400, 'password-confirm'));
@@ -268,7 +267,6 @@ exports.updateCertainPassword = catchAsync(async function(req, res, next) {
 
   const err1 = user.validateSync('password');
   if(err1) {
-    console.log(err1);
     throw err1};
  
   await user.save({ validateBeforeSave: false});
@@ -364,7 +362,6 @@ exports.checkActivatedWorkshop = catchAsync(async function(req, res, next) {
 
 exports.activateUser = catchAsync(async function(req, res, next) {
   const { username } = req.body;
-  console.log(username);
   const user = await User.findOne({name: username});
   if(!user) return next(new AppError('هذا المستخدم غير موجود', 404));
 
