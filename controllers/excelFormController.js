@@ -75,7 +75,8 @@ exports.getUsers = catchAsync(async function(req, res, next) {
     users = await User.find({}).select('+active');
     break;
     case "Name":
-    users = await User.find({name: {$regex: searchValue}}).select('+active')
+    const safe = String(searchValue ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    users = await User.find({name: {$regex: safe, $options: 'i'}}).select('+active')
     break;
     case "Code":
     const code = await Code.findOne({code: searchValue});
