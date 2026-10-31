@@ -129,7 +129,14 @@ body(data-domain=domain)
                 i(class='fa-solid fa-id-badge')
               .info-text
                 span.label &#x646;&#x648;&#x639; &#x627;&#x644;&#x62D;&#x633;&#x627;&#x628;
-                strong= user.role === 'admin'? "ادمن":"طالب"
+                strong= user.role === 'admin'? "ادمن": user.role === 'supervisor' ? "مشرف" : "طالب"
+            if user.role === 'admin' || user.role === 'supervisor'
+              a.info-box(href='/dashboard' style='text-decoration: none; color: inherit;')
+                .info-icon(aria-hidden='true')
+                  i(class='fa-solid fa-chart-line')
+                .info-text
+                  span.label لوحة الطلاب
+                  strong العلامات والتقدم والمجموعات
             if user.role === 'admin'
               a.info-box(href='/bot-admin' style='text-decoration: none; color: inherit;')
                 .info-icon(aria-hidden='true')
