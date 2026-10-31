@@ -70,13 +70,17 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
   const user = res.locals.user;
   const groups = await groupsFor(user);
   const group = groups.find(g => g._id.toString() === req.query.group) || null;
+  const ungrouped = isAdmin(user) && req.query.group === 'none';
   const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 40) : '';
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
   // what the viewer may see, then the chosen group / search inside it
-  const scope = { ...STUDENT, ...await buyerScope() };
+  const visible = { ...STUDENT, ...await buyerScope() };
+  const scope = { ...visible };
   if(group) scope._id = { $in: group.students };
+  else if(ungrouped) scope._id = { $nin: allowedIds(groups) };
   else if(!isAdmin(user)) scope._id = { $in: allowedIds(groups) };
+  const ungroupedCount = isAdmin(user) ? await User.countDocuments({ ...visible, _id: { $nin: allowedIds(groups) } }) : 0;
   const filter = { ...scope };
   if(q) filter.$or = [{ name: { $regex: escapeRegex(q), $options: 'i' } }, { studentId: { $regex: escapeRegex(q) } }, { parentPhone: { $regex: escapeRegex(q) } }];
 
@@ -104,6 +108,8 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
     user,
     groups,
     group,
+    ungrouped,
+    ungroupedCount,
     q,
     page,
     pages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
