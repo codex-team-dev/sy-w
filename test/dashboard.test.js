@@ -340,6 +340,11 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
     assert(res.status === 200 && !res.text.includes('nophonebuyer') && res.text.includes('alphaone'), 'no-phone student listed');
     await User.collection.deleteOne({ _id: insertedId });
   });
+  await check('dashboard hides students whose only course was deleted', async () => {
+    await mkUser('oldcrsq', { subcourses: [new mongoose.Types.ObjectId()] });
+    const res = await call('GET', '/dashboard', { cookie: admin });
+    assert(res.status === 200 && !res.text.includes('oldcrsq'), 'deleted-course student listed');
+  });
   const { insertedId: legacyId } = await User.collection.insertOne({ name: 'legacyold', email: 'legacy@t.com', password: 'x', active: true, role: 'user', subcourses: [], value: 50 });
   const legacy = `jwtStudyou=${jwt.sign({ id: legacyId }, process.env.JWT_SECRET_KEY)}`;
   await check('account without phones is sent to /complete-profile', async () => {

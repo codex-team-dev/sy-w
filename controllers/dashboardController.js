@@ -17,7 +17,8 @@ const PAGE_SIZE = 30;
 const BIRTHDAY_DAYS = 7;
 const TIME_ZONE = 'Asia/Damascus';
 const STUDENT = { role: { $nin: ['admin', 'supervisor'] } };
-const BUYER = { 'subcourses.0': { $exists: true }, studentId: { $type: 'string', $ne: '' } };
+// bought a course that still exists, and has a phone number
+const buyerScope = async () => ({ subcourses: { $in: await Subcourse.distinct('_id') }, studentId: { $type: 'string', $ne: '' } });
 const STUDENT_FIELDS = 'name email studentId parentPhone dob value subcourses active';
 
 const notFound = () => new AppError('هذا الطالب غير موجود', 404);
@@ -73,7 +74,7 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
   // what the viewer may see, then the chosen group / search inside it
-  const scope = { ...STUDENT, ...BUYER };
+  const scope = { ...STUDENT, ...await buyerScope() };
   if(group) scope._id = { $in: group.students };
   else if(!isAdmin(user)) scope._id = { $in: allowedIds(groups) };
   const filter = { ...scope };
