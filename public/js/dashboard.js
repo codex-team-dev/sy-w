@@ -4,11 +4,33 @@
     el.textContent = new Date(el.dataset.time).toLocaleString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   });
 
-  const page = document.getElementById('groups-page');
-  if (!page) return;
-
   const API = '/api/v1/dashboard';
   const reloadWith = msg => { Anki.toastAfterReload(msg); location.reload(); };
+  const demote = btn => Anki.confirm({
+    title: `إلغاء صلاحية ${btn.dataset.name}؟`,
+    text: 'يعود الحساب حساب طالب ويُسحب من كل المجموعات التي يشرف عليها.',
+    danger: true,
+    onSubmit: async () => reloadWith((await Anki.api(`${API}/supervisors/${btn.dataset.userId}`, 'DELETE')).message)
+  });
+
+  document.getElementById('supervisors-page')?.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.classList.contains('demote-btn')) demote(btn);
+    if (btn.classList.contains('make-supervisor-btn')) Anki.confirm({
+      title: `تعيين ${btn.dataset.name} مشرفا؟`,
+      text: 'يصبح الحساب حساب مشرف ويخرج من مجموعات الطلاب. أعطه بعدها صلاحية المجموعات التي يتابعها.',
+      icon: 'fa-user-tie',
+      submitText: 'تعيين',
+      onSubmit: async () => {
+        Anki.toastAfterReload((await Anki.api(`${API}/supervisors`, 'POST', { userId: btn.dataset.userId })).message);
+        location.href = '/dashboard/supervisors';
+      }
+    });
+  });
+
+  const page = document.getElementById('groups-page');
+  if (!page) return;
   const groupOf = el => el.closest('.group-admin');
   const supervisors = [...document.getElementById('supervisors-data').content.querySelectorAll('option')]
     .map(o => ({ value: o.value, label: o.textContent }));
@@ -21,27 +43,11 @@
     onSubmit: async v => reloadWith((await Anki.api(`${API}/groups`, 'POST', v)).message)
   }));
 
-  document.getElementById('new-supervisor-btn').addEventListener('click', () => Anki.dialog({
-    title: 'إضافة مشرف',
-    text: 'يصبح الحساب حساب مشرف ويخرج من مجموعات الطلاب. أعطه بعدها صلاحية المجموعات التي يتابعها.',
-    icon: 'fa-user-tie',
-    submitText: 'إضافة',
-    fields: [{ name: 'user', label: 'اسم الحساب أو رقم الهاتف', required: true, maxlength: 40 }],
-    onSubmit: async v => reloadWith((await Anki.api(`${API}/supervisors`, 'POST', v)).message)
-  }));
-
   page.addEventListener('click', e => {
     const btn = e.target.closest('button');
     if (!btn) return;
     const card = groupOf(btn);
     const groupUrl = card && `${API}/groups/${card.dataset.groupId}`;
-
-    if (btn.classList.contains('demote-btn')) Anki.confirm({
-      title: `إلغاء صلاحية ${btn.dataset.name}؟`,
-      text: 'يعود الحساب حساب طالب ويُسحب من كل المجموعات التي يشرف عليها.',
-      danger: true,
-      onSubmit: async () => reloadWith((await Anki.api(`${API}/supervisors/${btn.dataset.userId}`, 'DELETE')).message)
-    });
 
     if (btn.classList.contains('rename-group-btn')) Anki.dialog({
       title: 'تعديل اسم المجموعة',

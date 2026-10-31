@@ -1,8 +1,9 @@
-//- phone-only bottom navigation. active: home | courses | tests | cards | account
+//- phone-only bottom navigation. active: home | courses | tests | cards | dashboard | account
 mixin bottomNav(active)
-  - const icons = {home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', courses: '<path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2z"/><path d="M22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/>', tests: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', cards: '<rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/>', account: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>', login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/>'}
+  - const icons = {home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', courses: '<path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2z"/><path d="M22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/>', tests: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', cards: '<rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/>', account: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>', dashboard: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>', login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/>'}
   - const owns = user && user.subcourses && user.subcourses.length
   - const items = user ? [{key: 'home', href: '/', label: 'الرئيسية'}, {key: 'courses', href: owns ? '/#my-courses' : '/#courses', label: owns ? 'كورساتي' : 'الكورسات'}, {key: 'tests', href: '/tests', label: 'الاختبارات'}, {key: 'cards', href: '/anki', label: 'البطاقات'}, {key: 'account', href: '/settings', label: 'حسابي'}] : [{key: 'home', href: '/', label: 'الرئيسية'}, {key: 'courses', href: '/#courses', label: 'الكورسات'}, {key: 'login', href: '/sign-up', label: 'تسجيل الدخول'}]
+  - if(user && (user.role === 'admin' || user.role === 'supervisor')) items.splice(items.length - 1, 0, {key: 'dashboard', href: '/dashboard', label: 'الطلاب'})
   .app-bottom-nav-spacer
   nav.app-bottom-nav(aria-label='التنقل')
     each it in items

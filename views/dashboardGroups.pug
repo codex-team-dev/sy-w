@@ -10,29 +10,15 @@ block content
 
       .page-hero.hero-dashboard.compact
         div
-          h1 المجموعات والمشرفين
+          h1 المجموعات
           p قسّم الطلاب إلى مجموعات، وأعطِ كل مشرف صلاحية مجموعات معينة. المشرف يرى كامل معلومات طلاب مجموعاته فقط.
-        button.btn.btn-light#new-group-btn(type='button')
-          i.fa-solid.fa-plus
-          |  مجموعة جديدة
-
-      section.dash-section
-        .toolbar
-          h2
+        .hero-actions
+          button.btn.btn-light#new-group-btn(type='button')
+            i.fa-solid.fa-plus
+            |  مجموعة جديدة
+          a.btn.btn-light(href='/dashboard/supervisors')
             i.fa-solid.fa-user-tie
             |  المشرفون
-          button.btn.btn-primary#new-supervisor-btn(type='button')
-            i.fa-solid.fa-user-plus
-            |  إضافة مشرف
-        if supervisors.length
-          .chips-wrap
-            each s in supervisors
-              span.person-chip
-                | #{s.name}
-                button.chip-remove.demote-btn(type='button' data-user-id=s._id data-name=s.name title='إلغاء صلاحية المشرف' aria-label=`إلغاء صلاحية ${s.name}`)
-                  i.fa-solid.fa-xmark
-        else
-          p.muted-note لا يوجد مشرفون بعد. أضف مشرفا باسم حسابه أو رقم هاتفه.
 
       section.dash-section
         h2.section-title
@@ -69,7 +55,9 @@ block content
                         i.fa-solid.fa-plus
                         |  مشرف
                     else if !g.supervisors.length
-                      span.muted —
+                      a.btn-chip(href='/dashboard/supervisors')
+                        i.fa-solid.fa-user-plus
+                        |  عيّن مشرفا أولا
 
                 details.group-students
                   summary الطلاب (#{g.students.length})
