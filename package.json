@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js",
+    "test:dashboard": "node test/dashboard.test.js",
     "watch:js": "parcel view/uploadClass.html"
   },
   "author": "taimkh",

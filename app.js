@@ -181,6 +181,7 @@ app.use('/api/v1/notes/:subcourseId', notesRouter);
 app.use("/api/v1/saved-videos", savedVideosRouter);
 app.use('/api/v1/anki', require('./routes/ankiRoutes'));
 app.use('/api/v1/tests', require('./routes/generalTestRoutes'));
+app.use('/api/v1/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/v1/bot', require('./routes/botRoutes'));
 app.use('/api/v1/codex-requests', require('./routes/codexRequestRoutes'));
 

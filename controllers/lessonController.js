@@ -5,6 +5,7 @@ const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/AppError');
 const Lesson = require('./../models/lessonModel');
 const Question = require('./../models/questionModel');
+const QuizAttempt = require('./../models/quizAttemptModel');
 const { uploadLessonFile, deleteCardImages } = require('./../utils/ankiImageStorage');
 const { lessonPointer, isFile } = require('./../utils/courseProgress');
 
@@ -445,10 +446,13 @@ exports.solveQuestions = catchAsync(async function(req, res, next) {
 
   const feedBack = [];
   let correct = 0;
+  const seen = new Set();
 
   solvedQuestions.forEach(sq => {
-    const foundQuestion = resource.questions.find(q => sq.questionId == q._id.toString());
-    if(!foundQuestion) return;
+    const foundQuestion = sq && resource.questions.find(q => sq.questionId == q._id.toString());
+    // each question counts once, so a repeated answer can't raise the mark
+    if(!foundQuestion || seen.has(foundQuestion._id.toString())) return;
+    seen.add(foundQuestion._id.toString());
 
     if(foundQuestion.correctAnswer == sq.index)
       correct++;
@@ -460,6 +464,18 @@ exports.solveQuestions = catchAsync(async function(req, res, next) {
     })
     }
   })
+
+  const lesson = resource.ownerDocument ? resource.ownerDocument() : resource.parent();
+  await QuizAttempt.create({
+    user: req.user._id,
+    subcourse: req.body.subcourseId,
+    lesson: lesson._id,
+    resourceNum: resource.num,
+    lessonTitle: lesson.title,
+    quizTitle: resource.title,
+    correct,
+    total: resource.questions.length
+  });
 
   res.status(200).json({
     status: 'success',

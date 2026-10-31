@@ -1,0 +1,168 @@
+extends _layout
+include _mixins
+
+mixin contact(phone, label, icon)
+  .contact-card
+    .stat-icon(class=icon === 'parent' ? 'amber' : '')
+      i.fa-solid(class=icon === 'parent' ? 'fa-user-shield' : 'fa-user')
+    div
+      span.muted= label
+      if phone
+        strong.ltr= phone
+      else
+        strong —
+    if phone
+      .contact-actions
+        a.btn.btn-primary(href=`tel:${phone}`)
+          i.fa-solid.fa-phone
+          |  اتصال
+        a.btn.btn-ghost.whatsapp(href=`https://wa.me/963${phone.slice(1)}` target='_blank' rel='noopener')
+          i.fa-brands.fa-whatsapp
+          |  واتساب
+
+block content
+  main.anki-page.dashboard-page
+    .container-narrow
+      a.back-link(href='/dashboard')
+        i.fa-solid.fa-arrow-right
+        |  لوحة الطلاب
+
+      .card.student-head
+        .student-avatar.big= firstLetter(student.name)
+        .student-head-body
+          h1
+            | #{student.name}
+            if !student.active
+              span.status-badge.is-banned موقوف
+          .test-meta
+            span
+              i.fa-regular.fa-envelope
+              |  #{student.email}
+            span
+              i.fa-regular.fa-calendar
+              |  انضم #{formatDate(joinedAt)}
+            span
+              i.fa-solid.fa-coins
+              |  #{student.value} ATP
+          if groups.length
+            .row-groups
+              each g in groups
+                a.chip(href=`/dashboard?group=${g._id}`)= g.name
+          if !student.active && student.reasonToBlock
+            p.muted سبب الإيقاف: #{student.reasonToBlock}
+
+      .contact-grid
+        +contact(student.studentId, 'هاتف الطالب', 'student')
+        +contact(student.parentPhone, 'هاتف ولي الأمر', 'parent')
+        .contact-card
+          .stat-icon.green
+            i.fa-solid.fa-cake-candles
+          div
+            span.muted تاريخ الميلاد
+            if birthday
+              strong= formatDate(student.dob)
+              span.muted= birthday.days === 0 ? `عيد ميلاده اليوم (${birthday.age} سنة)` : `العمر ${birthday.ageNow} سنة · عيد الميلاد بعد ${birthday.days} يوم`
+            else
+              strong —
+
+      section.dash-section
+        h2.section-title
+          i.fa-solid.fa-book-open
+          |  الكورسات
+        if courses.length
+          .course-progress-list
+            each c in courses
+              .card.course-progress
+                .course-progress-head
+                  strong= c.title
+                  span.mark(class=c.percent >= 70 ? 'good' : c.percent >= 30 ? 'mid' : 'low')= `${c.percent}%`
+                .progress-bar
+                  span(style=`width:${c.percent}%`)
+                .test-meta
+                  span أنهى #{c.done} من #{c.total} فيديو واختبار
+                  if c.lastLesson
+                    span آخر درس فتحه: الدرس #{c.lastLesson}
+                  if !c.started
+                    span لم يبدأ بعد
+                if c.lessons.length
+                  details.lesson-breakdown
+                    summary تفاصيل الدروس (#{c.lessons.length})
+                    each l in c.lessons
+                      .lesson-row
+                        .lesson-row-head
+                          span.lesson-name الدرس #{l.num}: #{l.title}
+                          span.lesson-count(class=l.done === l.resources.length && l.done ? 'all' : l.done ? 'some' : '') #{l.done} / #{l.resources.length}
+                        if l.resources.length
+                          .res-chips
+                            each r in l.resources
+                              span(class=`res-chip ${r.type}${r.done ? ' done' : ''}` title=r.done ? 'أنهاه' : 'لم ينهه بعد')
+                                i.fa-solid(class=r.done ? 'fa-circle-check' : r.type === 'quiz' ? 'fa-list-check' : 'fa-play')
+                                span= r.title
+                                if r.mark
+                                  span.res-mark= r.mark
+        else
+          p.muted-note لم يشترِ أي كورس بعد
+
+      section.dash-section
+        h2.section-title
+          i.fa-solid.fa-file-pen
+          |  الاختبارات العامة
+        if tests.length
+          .table-wrap.card-table
+            table.dash-table
+              thead
+                tr
+                  th الاختبار
+                  th التاريخ
+                  th العلامة
+                  th الترتيب
+              tbody
+                each t in tests
+                  tr
+                    td= t.title
+                    td= formatDate(t.startedAt)
+                    td
+                      if !t.ended
+                        span.muted لم تظهر النتائج بعد
+                      else
+                        - const pct = t.total ? Math.round(t.score / t.total * 100) : 0
+                        span.mark(class=pct >= 70 ? 'good' : pct >= 50 ? 'mid' : 'low') #{t.score} / #{t.total}
+                        if !t.submitted
+                          span.muted  (لم يسلّم)
+                    td= t.ended && t.rank ? `${t.rank} من ${t.attemptsCount}` : '—'
+        else
+          p.muted-note لم يقدم أي اختبار عام بعد
+
+      section.dash-section
+        h2.section-title
+          i.fa-solid.fa-list-check
+          |  اختبارات الدروس
+        if quizAttempts.length
+          .table-wrap.card-table
+            table.dash-table
+              thead
+                tr
+                  th التاريخ
+                  th الكورس
+                  th الدرس
+                  th الاختبار
+                  th المحاولة
+                  th العلامة
+              tbody
+                each a in quizAttempts
+                  - const pct = a.total ? Math.round(a.correct / a.total * 100) : 0
+                  tr
+                    td
+                      time(data-time=new Date(a.createdAt).toISOString())= formatDate(a.createdAt)
+                    td= a.courseTitle
+                    td= a.lessonTitle || '—'
+                    td= a.quizTitle || '—'
+                    td= a.tryNum
+                    td
+                      span.mark(class=pct >= 70 ? 'good' : pct >= 50 ? 'mid' : 'low') #{a.correct} / #{a.total}
+                      span.muted  (#{pct}%)
+        else
+          p.muted-note لم يحل أي اختبار في الدروس بعد
+
+block scripts
+  script(src='/js/dashboard.js')

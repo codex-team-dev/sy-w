@@ -90,7 +90,7 @@ referral: {
   role: {
     type: String,
     enum: {
-      values: ['user', 'admin'],
+      values: ['user', 'admin', 'supervisor'],
       message: 'لا يمكنك تغيير دورك'
     },
     default: 'user',

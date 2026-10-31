@@ -1,0 +1,100 @@
+/* Students dashboard (uses anki.css components) */
+.page-hero.hero-dashboard { background: linear-gradient(135deg, #6c5ce7, #0ea5e9); box-shadow: 0 14px 30px rgba(14, 165, 233, .22); }
+.dashboard-page .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+.dash-section { margin-top: 24px; }
+.dashboard-page .section-title { display: flex; align-items: center; gap: 8px; color: var(--heading); font-size: 1.1rem; margin-bottom: 12px; }
+.dashboard-page .section-title i, .dashboard-page .toolbar h2 i { color: var(--primary); }
+.muted { color: var(--muted); font-size: .85rem; }
+.muted-note { color: var(--muted); font-size: .92rem; margin: 6px 0; }
+.ltr { direction: ltr; unicode-bidi: isolate; }
+
+.group-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-weight: 700; font-size: .88rem; text-decoration: none; }
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.chip-count { min-width: 22px; padding: 0 6px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: .75rem; text-align: center; }
+.chip.active .chip-count { background: rgba(255, 255, 255, .25); color: #fff; }
+
+.birthday-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.birthday-card { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); }
+.birthday-card.is-today { border-color: var(--amber); box-shadow: 0 8px 24px rgba(245, 158, 11, .15); }
+.birthday-when { display: flex; flex-direction: column; align-items: center; min-width: 74px; padding: 8px; border-radius: 12px; background: var(--amber-light); color: var(--amber-dark); text-align: center; }
+.birthday-when span { font-size: .78rem; }
+.birthday-body { flex: 1; min-width: 100px; display: flex; flex-direction: column; gap: 2px; }
+.birthday-calls { display: flex; gap: 6px; }
+.birthday-calls .btn-chip { text-decoration: none; }
+
+.student-link { color: var(--heading); font-weight: 800; text-decoration: none; overflow-wrap: anywhere; }
+.student-link:hover { color: var(--primary); }
+.row-groups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; color: var(--muted); font-size: .8rem; }
+.status-badge.is-banned { margin-inline-start: 8px; background: var(--red-light); color: var(--red); }
+
+.table-wrap { overflow-x: auto; }
+.card-table { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); }
+.dash-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.dash-table th, .dash-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: start; vertical-align: middle; }
+.dash-table th { color: var(--muted); font-weight: 700; white-space: nowrap; }
+.dash-table tr:last-child td { border-bottom: 0; }
+.phone-links { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.phone-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text); text-decoration: none; direction: ltr; font-variant-numeric: tabular-nums; }
+.phone-link:hover { color: var(--primary); }
+.phone-link i { color: var(--primary); font-size: .8rem; }
+.whatsapp, .icon-btn.whatsapp { color: #16a34a; }
+.icon-btn.whatsapp { width: 30px; height: 30px; }
+
+.mark { direction: ltr; unicode-bidi: isolate; display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: .85rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mark.good { background: var(--green-light); color: var(--green-dark); }
+.mark.mid { background: var(--amber-light); color: var(--amber-dark); }
+.mark.low { background: var(--red-light); color: var(--red); }
+
+.pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
+.pager-info { color: var(--muted); font-weight: 700; }
+
+.student-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.student-avatar.big { width: 64px; height: 64px; font-size: 1.6rem; }
+.student-head-body { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+.student-head-body h1 { color: var(--heading); font-size: clamp(1.3rem, 3vw, 1.7rem); overflow-wrap: anywhere; }
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+.contact-card { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); }
+.contact-card > div:not(.stat-icon):not(.contact-actions) { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+.contact-card strong { color: var(--heading); font-size: 1.05rem; }
+.contact-actions { display: flex; gap: 8px; width: 100%; }
+.contact-actions .btn { flex: 1; justify-content: center; text-decoration: none; }
+
+.course-progress-list { align-items: start; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.course-progress { display: flex; flex-direction: column; gap: 10px; }
+.course-progress-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--heading); }
+.progress-bar { height: 8px; border-radius: 999px; background: var(--primary-light); overflow: hidden; }
+.lesson-breakdown summary { cursor: pointer; color: var(--primary); font-weight: 700; font-size: .9rem; }
+.lesson-breakdown[open] summary { margin-bottom: 6px; }
+.lesson-row { padding: 10px 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.lesson-row-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--heading); font-size: .9rem; font-weight: 700; }
+.lesson-count { direction: ltr; unicode-bidi: isolate; font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.lesson-count.some { color: var(--amber-dark); }
+.lesson-count.all { color: var(--green-dark); }
+.res-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.res-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .78rem; border: 1px dashed var(--border); color: var(--muted); }
+.res-chip.done { border-style: solid; border-color: transparent; background: var(--green-light); color: var(--green-dark); }
+.res-mark { direction: ltr; unicode-bidi: isolate; font-weight: 800; }
+.progress-bar span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.test-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: .85rem; }
+
+.chips-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.person-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 12px; padding-inline: 12px 6px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: .85rem; }
+.person-chip a { color: inherit; text-decoration: none; }
+.chip-remove { width: 22px; height: 22px; border: 0; border-radius: 50%; display: grid; place-items: center; background: transparent; color: inherit; cursor: pointer; font-size: .75rem; }
+.chip-remove:hover { background: var(--red); color: #fff; }
+.group-admin-list { display: flex; flex-direction: column; gap: 12px; }
+.group-admin { display: flex; flex-direction: column; gap: 12px; }
+.group-admin-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.group-admin-head h3 { color: var(--heading); font-size: 1.08rem; overflow-wrap: anywhere; }
+.group-admin-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.group-admin-row > strong { color: var(--muted); font-size: .9rem; }
+.group-students summary { cursor: pointer; color: var(--heading); font-weight: 700; margin-bottom: 8px; }
+.group-admin .add-students-btn { align-self: flex-start; }
+.test-item-actions { display: flex; align-items: center; gap: 8px; }
+
+@media (max-width: 640px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .dash-table th, .dash-table td { white-space: nowrap; padding: 9px 10px; }
+}
