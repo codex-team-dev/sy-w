@@ -340,6 +340,25 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
     assert(res.status === 200 && !res.text.includes('nophonebuyer') && res.text.includes('alphaone'), 'no-phone student listed');
     await User.collection.deleteOne({ _id: insertedId });
   });
+  await check('admin "no group" filter lists only students outside every group', async () => {
+    const lone = await mkUser('lonelyq', { subcourses: [sub._id] });
+    const res = await call('GET', '/dashboard?group=none', { cookie: admin });
+    assert(res.status === 200 && res.text.includes(`/dashboard/students/${lone._id}`), 'ungrouped student missing');
+    const grouped = await StudentGroup.find().select('students');
+    const ids = [...new Set(grouped.flatMap(g => g.students.map(String)))];
+    assert(ids.length && ids.every(id => !res.text.includes(`/dashboard/students/${id}`)), 'grouped student listed');
+    assert(/chip-ungrouped[^>]*active|active[^>]*chip-ungrouped/.test(res.text), 'button not active');
+    const searched = await call('GET', '/dashboard?group=none&q=lonely', { cookie: admin });
+    assert(searched.text.includes('lonelyq') && !searched.text.includes('alphaone'), 'search inside filter broken');
+  });
+  await check('supervisor cannot use the "no group" filter', async () => {
+    const sup = await mkUser('supq', { role: 'supervisor' });
+    await StudentGroup.create({ name: 'Group Q', students: [s1._id], supervisors: [sup._id] });
+    const res = await call('GET', '/dashboard?group=none', { cookie: cookieOf(sup) });
+    assert(res.status === 200 && res.text.includes('alphaone'), `got ${res.status} ${res.text.slice(0, 120)}`);
+    assert(!res.text.includes('lonelyq'), 'ungrouped student leaked to supervisor');
+    assert(!res.text.includes('chip-ungrouped'), 'button shown to supervisor');
+  });
   await check('dashboard hides students whose only course was deleted', async () => {
     await mkUser('oldcrsq', { subcourses: [new mongoose.Types.ObjectId()] });
     const res = await call('GET', '/dashboard', { cookie: admin });
