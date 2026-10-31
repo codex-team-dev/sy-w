@@ -22,6 +22,11 @@ const {
 
 const router = express.Router();
 
+const { profileGate, getCompleteProfile, postCompleteProfile } = require('./../controllers/profileController');
+router.use(profileGate);
+router.get('/complete-profile', checkJWT, getCompleteProfile);
+router.post('/complete-profile', checkJWT, express.urlencoded({ extended: false, limit: '5kb' }), postCompleteProfile);
+
 const { telegramGate, getJoinPage, goToTelegram, confirmJoined } = require('./../controllers/telegramController');
 router.use(telegramGate);
 router.get('/join-telegram', checkJWT, getJoinPage);

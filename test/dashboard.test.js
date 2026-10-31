@@ -46,7 +46,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
   const yearsAgo = n => `${+today.slice(0, 4) - n}${today.slice(4)}`;
   let phone = 0;
   const mkUser = (name, extra = {}) => User.create({ name, email: `${name}@t.com`, password: 'password1', passwordConfirm: 'password1',
-    studentId: `09${String(10000000 + phone++)}`, parentPhone: `09${String(20000000 + phone++)}`, dob: '2008-01-15', referral: 'friend', ...extra });
+    studentId: `09${String(10000000 + phone++)}`, parentPhone: `09${String(20000000 + phone++)}`, dob: '2008-01-15', referral: 'friend', telegramJoined: true, ...extra });
   const cookieOf = u => `jwtStudyou=${jwt.sign({ id: u._id }, process.env.JWT_SECRET_KEY)}`;
 
   const adminU = await mkUser('adminx', { role: 'admin' });
@@ -64,6 +64,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
   await lesson.save();
   await Lesson.create({ title: 'L2', num: 2, subcourse: sub._id, videos: [{ fileType: 'video', title: 'Intro V' }, { fileType: 'file', title: 'Notes F' }, { fileType: 'video', title: 'Deep V' }, { fileType: 'quiz', title: 'Quiz B' }] });
   await User.updateOne({ _id: s1._id }, { $push: { subcourses: sub._id }, courseProgress: [{ courseId: sub._id, lessons: [{ lessonNum: 2, videoNumber: 2 }] }] });
+  await User.updateMany({ _id: { $in: [s2._id, s3._id, plain._id] } }, { $push: { subcourses: sub._id } });
   const groupA = await StudentGroup.create({ name: 'Group A', students: [s1._id], supervisors: [supA._id] });
   const groupB = await StudentGroup.create({ name: 'Group B', students: [s2._id] });
   const test = await GeneralTest.create({ title: 'Mid exam', startAt: new Date(Date.now() - 7200e3), endAt: new Date(Date.now() - 3600e3), duration: 30,
@@ -162,7 +163,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
   });
   await check('non-owner solve is rejected and not recorded', async () => {
     const before = await QuizAttempt.countDocuments();
-    const res = await solve([{ questionId: qa._id, index: 2 }], other);
+    const res = await solve([{ questionId: qa._id, index: 2 }], cookieOf(await mkUser('strangerq')));
     assert(!ok(res) && await QuizAttempt.countDocuments() === before, 'recorded');
   });
   await check('each attempt is listed with its try number', async () => {
@@ -302,6 +303,69 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
     assert(staff.text.includes('nav-dashboard-link') && staff.text.includes('href="/dashboard"'), 'admin button missing');
     const plainHome = await call('GET', '/');
     assert(!plainHome.text.includes('nav-dashboard-link'), 'shown to guest');
+  });
+
+  // ---------- buyers only + complete-profile gate ----------
+  const form = async (url, fields, cookie) => {
+    const wait = last + 450 - Date.now(); if(wait > 0) await sleep(wait); last = Date.now();
+    const res = await fetch(base + url, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded', cookie }, body: new URLSearchParams(fields) });
+    return { status: res.status, location: res.headers.get('location'), text: await res.text() };
+  };
+  await check('dashboard lists only students who bought a course', async () => {
+    await mkUser('nobuyerzz');
+    const res = await call('GET', '/dashboard?q=nobuyer', { cookie: admin });
+    assert(res.status === 200 && !res.text.includes('nobuyerzz'), 'non-buyer listed');
+    const all = await call('GET', '/dashboard', { cookie: admin });
+    assert(all.text.includes('alphaone') && !all.text.includes('nobuyerzz'), 'buyer filter wrong');
+  });
+  await check('DD.MM.YYYY birthdays show too', async () => {
+    const [y, m, d] = today.split('-');
+    await mkUser('dottedbday', { dob: `${d}.${m}.${+y - 17}`, subcourses: [sub._id] });
+    const res = await call('GET', '/dashboard', { cookie: admin });
+    assert(res.text.includes('يكمل 17 سنة'), 'dotted dob birthday missing');
+    const { birthdayInfo } = r('controllers/dashboardController');
+    assert(birthdayInfo('4.01.2009') && birthdayInfo('4.01.2009').ageNow >= 0, 'single-digit day not parsed');
+  });
+  const { insertedId: legacyId } = await User.collection.insertOne({ name: 'legacyold', email: 'legacy@t.com', password: 'x', active: true, role: 'user', subcourses: [], value: 50 });
+  const legacy = `jwtStudyou=${jwt.sign({ id: legacyId }, process.env.JWT_SECRET_KEY)}`;
+  await check('account without phones is sent to /complete-profile', async () => {
+    for(const url of ['/', '/settings', '/join-telegram']) {
+      const res = await call('GET', url, { cookie: legacy });
+      assert(res.status === 302 && res.text.includes('/complete-profile'), `${url} not redirected (${res.status})`);
+    }
+    const page = await call('GET', '/complete-profile', { cookie: legacy });
+    assert(page.status === 200 && page.text.includes('name="parentPhone"'), 'form missing');
+  });
+  await check('account without phones cannot use the API', async () => {
+    const res = await call('POST', '/api/v1/users/update-progress', { cookie: legacy, body: {} });
+    assert(!ok(res) && res.text.includes('إكمال معلومات حسابك'), `got ${res.status} ${res.text.slice(0, 80)}`);
+    const out = await call('POST', '/api/v1/users/logout', { cookie: legacy });
+    assert(!out.text.includes('إكمال معلومات حسابك'), 'logout blocked');
+  });
+  await check('complete-profile rejects bad input', async () => {
+    for(const f of [{ studentId: '123', parentPhone: '0991111111', dob: '2008-01-01' }, { studentId: '0991111111', parentPhone: '0991111111', dob: '2008-01-01' },
+      { studentId: '0991111111', parentPhone: '0992222222', dob: '2008-02-30' }, { studentId: '0991111111', parentPhone: '0992222222', dob: '' },
+      { 'studentId[$ne]': '1', parentPhone: '0992222222', dob: '2008-01-01' }]) {
+      const res = await form('/complete-profile', f, legacy);
+      assert(res.status === 400, `${JSON.stringify(f)} -> ${res.status}`);
+    }
+    const u = await User.collection.findOne({ _id: legacyId });
+    assert(!u.studentId && !u.dob, 'bad data saved');
+  });
+  await check('complete-profile saves valid input (Arabic digits ok) and unlocks the site', async () => {
+    const res = await form('/complete-profile', { studentId: '٠٩٩١٢٣٤٥٦٧', parentPhone: '0997654321', dob: '2008-03-05' }, legacy);
+    assert(res.status === 302 && res.location === '/', `got ${res.status}`);
+    const u = await User.collection.findOne({ _id: legacyId });
+    assert(u.studentId === '0991234567' && u.parentPhone === '0997654321' && u.dob === '05.03.2008' && u.value === 50, JSON.stringify(u));
+    const home = await call('GET', '/', { cookie: legacy });
+    assert(home.status === 200, `still gated (${home.status})`);
+    const again = await call('GET', '/complete-profile', { cookie: legacy });
+    assert(again.status === 302, 'form shown after completion');
+  });
+  await check('staff without phones are not gated', async () => {
+    await User.collection.updateOne({ _id: supB._id }, { $unset: { studentId: '', parentPhone: '' } });
+    const res = await call('GET', '/dashboard', { cookie: superB });
+    assert(res.status === 200, `got ${res.status}`);
   });
 
   const failed = results.filter(x => !x[0]);

@@ -9,7 +9,7 @@ const needsJoinPage = user => !!user && user.role !== 'admin' && !user.telegramJ
 
 // sends students who bought their first course to the join page until they confirm
 exports.telegramGate = function(req, res, next) {
-  if(req.method !== 'GET' || req.originalUrl.startsWith('/api') || req.path.startsWith(JOIN_PAGE)) return next();
+  if(req.method !== 'GET' || req.originalUrl.startsWith('/api') || req.path.startsWith(JOIN_PAGE) || req.path.startsWith('/complete-profile')) return next();
   if(!needsJoinPage(res.locals.user)) return next();
   res.redirect(JOIN_PAGE);
 };

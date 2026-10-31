@@ -1,0 +1,30 @@
+doctype html
+html(lang='ar' dir='rtl')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    title أكمل معلومات حسابك | Studyou
+    link(href='https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap' rel='stylesheet')
+    link(rel='stylesheet' href='/css/joinTelegram.css')
+  body
+    script(src='/js/anki/darkMode.js')
+    main.join-card
+      .join-icon
+        svg(viewBox='0 0 24 24' width='42' height='42' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true')
+          path(d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2')
+          circle(cx='12' cy='7' r='4')
+      h1 أكمل معلومات حسابك
+      p.join-text نحتاج هذه المعلومات لمتابعة تقدمك والتواصل معك. لا يمكنك متابعة استخدام الموقع قبل إكمالها.
+      form.profile-form(method='POST' action='/complete-profile' novalidate)
+        label.profile-field
+          span رقم هاتف الطالب
+          input(type='tel' name='studentId' inputmode='numeric' placeholder='09xxxxxxxx' maxlength='10' value=values.studentId required autocomplete='tel')
+        label.profile-field
+          span رقم هاتف ولي الأمر
+          input(type='tel' name='parentPhone' inputmode='numeric' placeholder='09xxxxxxxx' maxlength='10' value=values.parentPhone required)
+        label.profile-field
+          span تاريخ الميلاد
+          input(type='date' name='dob' value=values.dob max=maxDate min='1950-01-01' required)
+        if error
+          p.join-error(role='alert')= error
+        button.join-btn.join-btn-primary(type='submit') حفظ ومتابعة

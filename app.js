@@ -13,6 +13,7 @@ const xssProtecter = require('./utils/xssClean');
 const noSQLSanitizer = require('express-mongo-sanitize');
 
 const { checkJWT, checkLink } = require('./controllers/authController');
+const { profileApiGate } = require('./controllers/profileController');
 
 const app = express();
 
@@ -96,7 +97,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/', checkLink, checkJWT, overallLimiter);
-app.use('/api', checkLink, checkJWT, apiLimiter);
+app.use('/api', checkLink, checkJWT, apiLimiter, profileApiGate);
 // after checkJWT so the limit is keyed per user, not per shared IP
 app.use('/api/v1/codes/activate-code', codeLimiter);
 

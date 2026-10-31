@@ -103,3 +103,41 @@ h1 {
   color: var(--red);
   font-weight: 500;
 }
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: right;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.profile-field input {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  font-weight: 500;
+  color: var(--dark);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  direction: ltr;
+  text-align: right;
+}
+
+.profile-field input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.profile-form .join-error {
+  margin: 0;
+}
