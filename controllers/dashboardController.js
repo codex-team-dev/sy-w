@@ -200,7 +200,26 @@ exports.getGroups = catchAsync(async function(req, res, next) {
     StudentGroup.find().populate('students', 'name studentId').populate('supervisors', 'name').sort('name'),
     User.find({ role: 'supervisor' }).select('name email studentId').sort('name')
   ]);
-  res.status(200).render('dashboardGroups', { ...layout, pageTitle: 'المجموعات والمشرفين', user: res.locals.user, groups, supervisors });
+  res.status(200).render('dashboardGroups', { ...layout, pageTitle: 'المجموعات', user: res.locals.user, groups, supervisors });
+});
+
+// admin: current supervisors with their groups + account search to make new ones
+exports.getSupervisors = catchAsync(async function(req, res, next) {
+  const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 40) : '';
+  const rx = new RegExp(escapeRegex(q), 'i');
+  const [supervisors, groups, matches] = await Promise.all([
+    User.find({ role: 'supervisor' }).select('name email studentId').sort('name'),
+    StudentGroup.find({ 'supervisors.0': { $exists: true } }).select('name supervisors').sort('name'),
+    q ? User.find({ ...STUDENT, $or: [{ name: rx }, { studentId: rx }] }).select('name email studentId').sort('name').limit(20) : []
+  ]);
+  res.status(200).render('dashboardSupervisors', {
+    ...layout,
+    pageTitle: 'المشرفون',
+    user: res.locals.user,
+    q,
+    matches,
+    supervisors: supervisors.map(s => ({ s, groups: groups.filter(g => g.supervisors.some(id => id.equals(s._id))) }))
+  });
 });
 
 /* ---------------------------- admin api ---------------------------- */
@@ -271,9 +290,11 @@ exports.removeSupervisor = catchAsync(async function(req, res, next) {
 
 // turn a normal account into a supervisor account (by name or phone)
 exports.makeSupervisor = catchAsync(async function(req, res, next) {
+  const { userId } = req.body;
+  const byId = typeof userId === 'string' && mongoose.isValidObjectId(userId);
   const key = cleanName(req.body.user);
-  if(!key) return next(new AppError('الرجاء كتابة اسم الحساب أو رقمه', 400));
-  const target = await User.findOne({ $or: [{ name: key }, { studentId: key }] }).select('+role');
+  if(!byId && !key) return next(new AppError('الرجاء كتابة اسم الحساب أو رقمه', 400));
+  const target = await User.findOne(byId ? { _id: userId } : { $or: [{ name: key }, { studentId: key }] }).select('+role');
   if(!target) return next(new AppError('هذا الحساب غير موجود', 404));
   if(target.role === 'admin') return next(new AppError('هذا الحساب ادمن', 400));
   if(target.role === 'supervisor') return next(new AppError('هذا الحساب مشرف بالفعل', 400));

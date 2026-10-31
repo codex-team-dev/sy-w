@@ -271,6 +271,39 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
     for(const u of ['/groups/nope', '/groups/nope/students/nope']) { const res = await api('DELETE', u); assert(!ok(res) && res.status < 500, u); }
   });
 
+  await check('supervisors page is admin-only', async () => {
+    for(const cookie of [superB, student, undefined]) {
+      const res = await call('GET', '/dashboard/supervisors?q=gamma', { cookie });
+      assert(!res.text.includes('gammathree') && !res.text.includes('make-supervisor-btn'), 'page leaked');
+    }
+  });
+  await check('supervisors page search lists student accounts only', async () => {
+    const res = await call('GET', '/dashboard/supervisors?q=gamma', { cookie: admin });
+    assert(res.status === 200 && /data-name="gammathree"/.test(res.text), 'match missing');
+    const staff = await call('GET', '/dashboard/supervisors?q=admin', { cookie: admin });
+    assert(!/data-name="adminx"/.test(staff.text), 'admin offered as supervisor');
+    const rx = await call('GET', `/dashboard/supervisors?q=${encodeURIComponent('.*')}`, { cookie: admin });
+    assert(!rx.text.includes('make-supervisor-btn'), 'regex not literal');
+  });
+  await check('admin makes a supervisor by account id from the page', async () => {
+    const d = await mkUser('deltafour');
+    assert(ok(await api('POST', '/supervisors', { userId: String(d._id) })), 'rejected');
+    assert((await User.findById(d._id).select('+role')).role === 'supervisor', 'role not set');
+    const res = await call('GET', '/dashboard/supervisors', { cookie: admin });
+    assert(/class="btn btn-ghost demote-btn"[^>]*data-name="deltafour"/.test(res.text), 'not listed');
+  });
+  await check('bad userId values are rejected', async () => {
+    const before = await User.countDocuments({ role: 'supervisor' });
+    for(const userId of [{ $ne: null }, 'nope', String(adminU._id)]) assert(!ok(await api('POST', '/supervisors', { userId })), JSON.stringify(userId));
+    assert(await User.countDocuments({ role: 'supervisor' }) === before, 'role changed');
+  });
+  await check('dashboard entry shown to staff only', async () => {
+    const staff = await call('GET', '/', { cookie: admin });
+    assert(staff.text.includes('nav-dashboard-link') && staff.text.includes('href="/dashboard"'), 'admin button missing');
+    const plainHome = await call('GET', '/');
+    assert(!plainHome.text.includes('nav-dashboard-link'), 'shown to guest');
+  });
+
   const failed = results.filter(x => !x[0]);
   failed.forEach(([, name, msg]) => console.log(`FAIL  ${name}\n      ${msg}`));
   console.log(`${results.length - failed.length}/${results.length} dashboard checks passed`);

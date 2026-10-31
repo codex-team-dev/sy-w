@@ -37,7 +37,11 @@ body(data-domain= domain)
         a.nav-ext-link(href='/anki') البطاقات
         a.nav-ext-link(href='/tests') الاختبارات
         - if(user && (user.role === 'admin' || user.role === 'supervisor'))
-          a.nav-ext-link(href='/dashboard') لوحة الطلاب
+          a.nav-ext-link.nav-dashboard-link(href='/dashboard')
+            svg(viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true')
+              path(d='M3 3v18h18')
+              path(d='M7 15l4-4 3 3 5-6')
+            span لوحة الطلاب
         - if(user)
           a.settings-btn(role='button') اعدادات الحساب
       - if(!user)
@@ -62,7 +66,7 @@ body(data-domain= domain)
       a.nav-ext-link(href='/anki') البطاقات
       a.nav-ext-link(href='/tests') الاختبارات
       - if(user && (user.role === 'admin' || user.role === 'supervisor'))
-        a.nav-ext-link(href='/dashboard') لوحة الطلاب
+        a.nav-ext-link.nav-dashboard-link(href='/dashboard') لوحة الطلاب
       - if(user)
         a.settings-btn(role="button") اعدادات الحساب
   // Main Content

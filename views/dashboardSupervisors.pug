@@ -1,0 +1,78 @@
+extends _layout
+include _mixins
+
+block content
+  main.anki-page.dashboard-page#supervisors-page
+    .container-narrow
+      a.back-link(href='/dashboard')
+        i.fa-solid.fa-arrow-right
+        |  لوحة الطلاب
+
+      .page-hero.hero-dashboard.compact
+        div
+          h1 المشرفون
+          p المشرف يرى كامل معلومات طلاب المجموعات التي تعطيه صلاحيتها فقط.
+        .hero-actions
+          a.btn.btn-light(href='/dashboard/groups')
+            i.fa-solid.fa-people-group
+            |  المجموعات
+
+      section.dash-section
+        h2.section-title
+          i.fa-solid.fa-user-plus
+          |  تعيين مشرف
+        .card.make-supervisor
+          form.search-box(method='get' action='/dashboard/supervisors' role='search')
+            i.fa-solid.fa-magnifying-glass
+            input(type='search' name='q' value=q placeholder='ابحث عن الحساب بالاسم أو رقم الهاتف' aria-label='بحث عن حساب' maxlength='40' autofocus=!q)
+          if q
+            if matches.length
+              ul.account-results
+                each m in matches
+                  li.account-result
+                    .account-info
+                      strong= m.name
+                      span= m.studentId || m.email
+                    button.btn.btn-primary.make-supervisor-btn(type='button' data-user-id=m._id data-name=m.name)
+                      i.fa-solid.fa-user-tie
+                      |  تعيين مشرف
+            else
+              p.muted-note لا يوجد حساب طالب بهذا الاسم أو الرقم
+          else
+            p.muted-note ابحث عن الحساب ثم اضغط "تعيين مشرف"، وبعدها أعطه مجموعاته من صفحة المجموعات.
+
+      section.dash-section
+        h2.section-title
+          i.fa-solid.fa-user-tie
+          |  المشرفون الحاليون (#{supervisors.length})
+        if supervisors.length
+          .supervisor-list
+            each row in supervisors
+              article.card.supervisor-card
+                .group-admin-head
+                  div
+                    h3= row.s.name
+                    .test-meta
+                      if row.s.studentId
+                        a.phone-link(href=`tel:${row.s.studentId}`)
+                          i.fa-solid.fa-phone
+                          span= row.s.studentId
+                      span= row.s.email
+                  button.btn.btn-ghost.demote-btn(type='button' data-user-id=row.s._id data-name=row.s.name)
+                    i.fa-solid.fa-user-minus
+                    |  إلغاء الإشراف
+                .group-admin-row
+                  strong المجموعات:
+                  .chips-wrap
+                    if row.groups.length
+                      each g in row.groups
+                        a.person-chip(href=`/dashboard?group=${g._id}`)= g.name
+                    else
+                      a.btn-chip(href='/dashboard/groups')
+                        i.fa-solid.fa-plus
+                        |  أعطه مجموعة
+        else
+          +emptyState('fa-user-tie', 'لا يوجد مشرفون بعد', 'ابحث عن حساب في الأعلى وعيّنه مشرفا')
+
+block scripts
+  script(src='/js/dashboard.js')

@@ -68,6 +68,9 @@ html(lang='ar' dir='rtl')
         else
           a.nav-icon-btn(href='/tests' title='الاختبارات' aria-label='الاختبارات')
             i.fa-solid.fa-file-pen
+        if (user.role === 'admin' || user.role === 'supervisor') && brandHref !== '/dashboard'
+          a.nav-icon-btn(href='/dashboard' title='لوحة الطلاب' aria-label='لوحة الطلاب')
+            i.fa-solid.fa-chart-line
         if user.role === 'admin' && !brandHref
           a.nav-icon-btn(href='/anki/admin/review' title='مراجعة المجموعات' aria-label='مراجعة المجموعات')
             i.fa-solid.fa-shield-halved

@@ -448,9 +448,10 @@ router.get('/anki/admin/review', checkJWT, restrictTo('admin'), getAdminReview);
  
 
 // students dashboard: admins see every student, supervisors only the students of their groups
-const { getDashboard, getStudent, getGroups } = require('./../controllers/dashboardController');
+const { getDashboard, getStudent, getGroups, getSupervisors } = require('./../controllers/dashboardController');
 router.get('/dashboard', checkJWT, restrictTo('admin', 'supervisor'), getDashboard);
 router.get('/dashboard/students/:userId', checkJWT, restrictTo('admin', 'supervisor'), getStudent);
 router.get('/dashboard/groups', checkJWT, restrictTo('admin'), getGroups);
+router.get('/dashboard/supervisors', checkJWT, restrictTo('admin'), getSupervisors);
 
 module.exports = router;

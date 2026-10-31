@@ -19,9 +19,13 @@ block content
         h1 لوحة الطلاب
         p= user.role === 'admin' ? 'كل الطلاب، علاماتهم وتقدمهم في الكورسات' : 'طلاب مجموعاتك، علاماتهم وتقدمهم في الكورسات'
       if user.role === 'admin'
-        a.btn.btn-light(href='/dashboard/groups')
-          i.fa-solid.fa-people-group
-          |  المجموعات والمشرفين
+        .hero-actions
+          a.btn.btn-light(href='/dashboard/groups')
+            i.fa-solid.fa-people-group
+            |  المجموعات
+          a.btn.btn-light(href='/dashboard/supervisors')
+            i.fa-solid.fa-user-tie
+            |  المشرفون
 
     .stats-row
       .stat-card

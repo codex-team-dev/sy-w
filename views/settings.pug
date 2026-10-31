@@ -138,6 +138,13 @@ body(data-domain=domain)
                   span.label لوحة الطلاب
                   strong العلامات والتقدم والمجموعات
             if user.role === 'admin'
+              a.info-box(href='/dashboard/supervisors' style='text-decoration: none; color: inherit;')
+                .info-icon(aria-hidden='true')
+                  i(class='fa-solid fa-user-tie')
+                .info-text
+                  span.label المشرفون
+                  strong تعيين مشرف أو إلغاء صلاحيته
+            if user.role === 'admin'
               a.info-box(href='/bot-admin' style='text-decoration: none; color: inherit;')
                 .info-icon(aria-hidden='true')
                   i(class='fa-brands fa-telegram')

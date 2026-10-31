@@ -98,3 +98,16 @@
   .stats-row { grid-template-columns: 1fr; }
   .dash-table th, .dash-table td { white-space: nowrap; padding: 9px 10px; }
 }
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.make-supervisor { display: flex; flex-direction: column; gap: 12px; }
+.make-supervisor .search-box { flex: none; max-width: none; }
+.account-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.account-result { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.account-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.account-info strong { color: var(--heading); }
+.account-info span { color: var(--muted); font-size: .85rem; direction: ltr; text-align: end; unicode-bidi: isolate; }
+.supervisor-list { display: grid; gap: 12px; }
+.supervisor-card { display: flex; flex-direction: column; gap: 12px; }
+.demote-btn { color: var(--red); }
+a.person-chip { text-decoration: none; padding-inline: 12px; }
