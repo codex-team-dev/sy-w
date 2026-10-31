@@ -17,6 +17,7 @@ const PAGE_SIZE = 30;
 const BIRTHDAY_DAYS = 7;
 const TIME_ZONE = 'Asia/Damascus';
 const STUDENT = { role: { $nin: ['admin', 'supervisor'] } };
+const BUYER = { 'subcourses.0': { $exists: true } };
 const STUDENT_FIELDS = 'name email studentId parentPhone dob value subcourses active';
 
 const notFound = () => new AppError('هذا الطالب غير موجود', 404);
@@ -42,9 +43,13 @@ const pad = n => String(n).padStart(2, '0');
 const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
 // dob is 'YYYY-MM-DD' from <input type=date>
+// sign-up stores DD.MM.YYYY; some older accounts have YYYY-MM-DD
 const parseDob = dob => {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dob || ''));
-  return match ? { y: +match[1], m: +match[2], d: +match[3] } : null;
+  const s = String(dob || '');
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if(iso) return { y: +iso[1], m: +iso[2], d: +iso[3] };
+  const dotted = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s);
+  return dotted ? { y: +dotted[3], m: +dotted[2], d: +dotted[1] } : null;
 };
 
 // days until the next birthday (0 = today) and the age reached on it
@@ -72,6 +77,11 @@ const comingDayEndings = n => {
   return endings;
 };
 
+const birthdayRegex = endings => {
+  const dotted = endings.map(e => { const [m, d] = e.split('-'); return `0?${+d}\\.0?${+m}\\.`; });
+  return `-(${endings.join('|')})$|^(${dotted.join('|')})\\d{4}$`;
+};
+
 /* ------------------------------ pages ------------------------------ */
 exports.getDashboard = catchAsync(async function(req, res, next) {
   const user = res.locals.user;
@@ -81,7 +91,7 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
   // what the viewer may see, then the chosen group / search inside it
-  const scope = { ...STUDENT };
+  const scope = { ...STUDENT, ...BUYER };
   if(group) scope._id = { $in: group.students };
   else if(!isAdmin(user)) scope._id = { $in: allowedIds(groups) };
   const filter = { ...scope };
@@ -90,7 +100,7 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
   const [total, students, birthdays] = await Promise.all([
     User.countDocuments(filter),
     User.find(filter).select(STUDENT_FIELDS).sort('name').skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE),
-    User.find({ ...scope, dob: { $regex: `-(${comingDayEndings(BIRTHDAY_DAYS).join('|')})$` } }).select('name studentId parentPhone dob')
+    User.find({ ...scope, dob: { $regex: birthdayRegex(comingDayEndings(BIRTHDAY_DAYS)) } }).select('name studentId parentPhone dob')
   ]);
 
   const ids = students.map(s => s._id);
