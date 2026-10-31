@@ -29,6 +29,7 @@
 .row-groups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; color: var(--muted); font-size: .8rem; }
 .status-badge.is-banned { margin-inline-start: 8px; background: var(--red-light); color: var(--red); }
 
+.table-wrap { overflow-x: auto; }
 .card-table { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .dash-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .dash-table th, .dash-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: start; vertical-align: middle; }
@@ -41,7 +42,7 @@
 .whatsapp, .icon-btn.whatsapp { color: #16a34a; }
 .icon-btn.whatsapp { width: 30px; height: 30px; }
 
-.mark { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: .85rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mark { direction: ltr; unicode-bidi: isolate; display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: .85rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .mark.good { background: var(--green-light); color: var(--green-dark); }
 .mark.mid { background: var(--amber-light); color: var(--amber-dark); }
 .mark.low { background: var(--red-light); color: var(--red); }
@@ -84,4 +85,5 @@
 
 @media (max-width: 640px) {
   .stats-row { grid-template-columns: 1fr; }
+  .dash-table th, .dash-table td { white-space: nowrap; padding: 9px 10px; }
 }
