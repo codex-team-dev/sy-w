@@ -61,10 +61,21 @@
 .contact-actions { display: flex; gap: 8px; width: 100%; }
 .contact-actions .btn { flex: 1; justify-content: center; text-decoration: none; }
 
-.course-progress-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.course-progress-list { align-items: start; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .course-progress { display: flex; flex-direction: column; gap: 10px; }
 .course-progress-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--heading); }
 .progress-bar { height: 8px; border-radius: 999px; background: var(--primary-light); overflow: hidden; }
+.lesson-breakdown summary { cursor: pointer; color: var(--primary); font-weight: 700; font-size: .9rem; }
+.lesson-breakdown[open] summary { margin-bottom: 6px; }
+.lesson-row { padding: 10px 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.lesson-row-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--heading); font-size: .9rem; font-weight: 700; }
+.lesson-count { direction: ltr; unicode-bidi: isolate; font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.lesson-count.some { color: var(--amber-dark); }
+.lesson-count.all { color: var(--green-dark); }
+.res-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.res-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .78rem; border: 1px dashed var(--border); color: var(--muted); }
+.res-chip.done { border-style: solid; border-color: transparent; background: var(--green-light); color: var(--green-dark); }
+.res-mark { direction: ltr; unicode-bidi: isolate; font-weight: 800; }
 .progress-bar span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
 .test-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: .85rem; }
 

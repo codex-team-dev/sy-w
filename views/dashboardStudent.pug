@@ -84,6 +84,22 @@ block content
                     span آخر درس فتحه: الدرس #{c.lastLesson}
                   if !c.started
                     span لم يبدأ بعد
+                if c.lessons.length
+                  details.lesson-breakdown
+                    summary تفاصيل الدروس (#{c.lessons.length})
+                    each l in c.lessons
+                      .lesson-row
+                        .lesson-row-head
+                          span.lesson-name الدرس #{l.num}: #{l.title}
+                          span.lesson-count(class=l.done === l.resources.length && l.done ? 'all' : l.done ? 'some' : '') #{l.done} / #{l.resources.length}
+                        if l.resources.length
+                          .res-chips
+                            each r in l.resources
+                              span(class=`res-chip ${r.type}${r.done ? ' done' : ''}` title=r.done ? 'أنهاه' : 'لم ينهه بعد')
+                                i.fa-solid(class=r.done ? 'fa-circle-check' : r.type === 'quiz' ? 'fa-list-check' : 'fa-play')
+                                span= r.title
+                                if r.mark
+                                  span.res-mark= r.mark
         else
           p.muted-note لم يشترِ أي كورس بعد
 

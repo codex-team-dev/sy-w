@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('./../models/userModel');
 const Subcourse = require('./../models/subcourseModel');
+const Lesson = require('./../models/lessonModel');
 const StudentGroup = require('./../models/studentGroupModel');
 const QuizAttempt = require('./../models/quizAttemptModel');
 const GeneralTest = require('./../models/generalTestModel');
@@ -8,6 +9,7 @@ const TestAttempt = require('./../models/testAttemptModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/AppError');
 const { resourceCounts, progressOf } = require('./../utils/courseStats');
+const { lessonPointer, isFile } = require('./../utils/courseProgress');
 const { finalizeResults } = require('./generalTestController');
 
 const layout = { brandHref: '/dashboard', brandBadge: 'لوحة الطلاب', brandIcon: 'fa-chart-line', styles: ['/css/dashboard.css'] };
@@ -134,12 +136,13 @@ exports.getStudent = catchAsync(async function(req, res, next) {
   const student = await User.findOne({ _id: userId, ...STUDENT }).select(`${STUDENT_FIELDS} courseProgress reasonToBlock`);
   if(!student) return next(notFound());
 
-  const [groups, courses, counts, quizAttempts, testAttempts] = await Promise.all([
+  const [groups, courses, counts, quizAttempts, testAttempts, lessons] = await Promise.all([
     StudentGroup.find({ students: student._id, ...(isAdmin(user) ? {} : { supervisors: user._id }) }).select('name').sort('name'),
     Subcourse.find({ _id: { $in: student.subcourses } }).select('title finished'),
     resourceCounts(student.subcourses),
     QuizAttempt.find({ user: student._id }).sort({ createdAt: -1 }).limit(300).lean(),
-    TestAttempt.find({ user: student._id }).sort({ startedAt: -1 })
+    TestAttempt.find({ user: student._id }).sort({ startedAt: -1 }),
+    Lesson.find({ subcourse: { $in: student.subcourses } }).select('title num subcourse videos.title videos.fileType videos.num').sort('num').lean()
   ]);
 
   // general test marks exist only after a test ends
@@ -155,6 +158,21 @@ exports.getStudent = catchAsync(async function(req, res, next) {
     tries[key] = (tries[key] || 0) + 1;
     a.tryNum = tries[key];
   });
+  // latest mark per quiz (attempts are newest first)
+  const lastMark = {};
+  quizAttempts.forEach(a => { lastMark[`${a.lesson}-${a.resourceNum}`] ??= a; });
+
+  // lessons can be opened in any order; inside a lesson resources unlock one by one
+  const lessonsOf = (courseId, progress) => lessons.filter(l => l.subcourse?.toString() === courseId.toString()).map(l => {
+    const videos = l.videos || [];
+    const pointer = lessonPointer(progress, l.num, videos);
+    const resources = videos.map((v, i) => ({ v, i })).filter(({ v }) => !isFile(v)).map(({ v, i }) => {
+      const mark = v.fileType === 'quiz' && lastMark[`${l._id}-${v.num ?? i}`];
+      return { title: v.title, type: v.fileType === 'quiz' ? 'quiz' : 'video', done: i < pointer, mark: mark ? `${mark.correct} / ${mark.total}` : null };
+    });
+    return { num: l.num, title: l.title, resources, done: resources.filter(r => r.done).length };
+  });
+
   const courseTitle = Object.fromEntries(courses.map(c => [c._id.toString(), c.title]));
 
   res.status(200).render('dashboardStudent', {
@@ -167,7 +185,7 @@ exports.getStudent = catchAsync(async function(req, res, next) {
     birthday: birthdayInfo(student.dob),
     courses: courses.map(c => {
       const p = student.courseProgress.find(cp => cp.courseId?.toString() === c._id.toString());
-      return { title: c.title, finished: c.finished, lastLesson: p?.lastLesson || null, ...progressOf(student, c._id, counts[c._id.toString()] || 0) };
+      return { title: c.title, finished: c.finished, lastLesson: p?.lastLesson || null, lessons: lessonsOf(c._id, p), ...progressOf(student, c._id, counts[c._id.toString()] || 0) };
     }).sort((a, b) => b.percent - a.percent),
     quizAttempts: quizAttempts.map(a => ({ ...a, courseTitle: courseTitle[a.subcourse.toString()] || '—' })),
     tests: freshAttempts.map(a => {

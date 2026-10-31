@@ -62,7 +62,8 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
   const qb = await Question.create({ text: 'q2', answers: ['a', 'b', 'c', 'd'], correctAnswer: 0 });
   lesson.videos[0].questions = [qa._id, qb._id];
   await lesson.save();
-  await User.updateOne({ _id: s1._id }, { $push: { subcourses: sub._id } });
+  await Lesson.create({ title: 'L2', num: 2, subcourse: sub._id, videos: [{ fileType: 'video', title: 'Intro V' }, { fileType: 'file', title: 'Notes F' }, { fileType: 'video', title: 'Deep V' }, { fileType: 'quiz', title: 'Quiz B' }] });
+  await User.updateOne({ _id: s1._id }, { $push: { subcourses: sub._id }, courseProgress: [{ courseId: sub._id, lessons: [{ lessonNum: 2, videoNumber: 2 }] }] });
   const groupA = await StudentGroup.create({ name: 'Group A', students: [s1._id], supervisors: [supA._id] });
   const groupB = await StudentGroup.create({ name: 'Group B', students: [s2._id] });
   const test = await GeneralTest.create({ title: 'Mid exam', startAt: new Date(Date.now() - 7200e3), endAt: new Date(Date.now() - 3600e3), duration: 30,
@@ -167,6 +168,15 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
   await check('each attempt is listed with its try number', async () => {
     const res = await call('GET', `/dashboard/students/${s1._id}`, { cookie: admin });
     assert(res.text.includes('Quiz A') && res.text.includes('1 / 2') && (res.text.match(/<td>3<\/td>/) || []).length >= 1, 'attempts missing');
+  });
+  await check('per-lesson resources show what was finished', async () => {
+    const res = await call('GET', `/dashboard/students/${s1._id}`, { cookie: admin });
+    const chip = t => res.text.split('class="res-chip').find(c => c.includes(`<span>${t}</span>`)) || '';
+    assert(chip('Intro V').startsWith(' video done"'), 'finished video not marked');
+    assert(chip('Deep V').startsWith(' video"') && chip('Quiz B').startsWith(' quiz"'), 'unfinished resource marked done');
+    assert(!res.text.includes('Notes F'), 'file listed as progress');
+    assert(/الدرس 2: L2[\s\S]*?1 \/ 3/.test(res.text), 'lesson count missing');
+    assert(/<span>Quiz A<\/span><span class="res-mark">\d+ \/ 2<\/span>/.test(res.text), 'quiz mark missing');
   });
   await check('general test mark and rank shown after the test ends', async () => {
     const res = await call('GET', `/dashboard/students/${s1._id}`, { cookie: admin });
