@@ -325,6 +325,20 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
     assert(res.text.includes('يكمل 17 سنة'), 'dotted dob birthday missing');
     const { birthdayInfo } = r('controllers/dashboardController');
     assert(birthdayInfo('4.01.2009') && birthdayInfo('4.01.2009').ageNow >= 0, 'single-digit day not parsed');
+    for(const [raw, iso] of [['31.10.2009', '2009-10-31'], ['17/12/2008', '2008-12-17'], ['2009.8.14', '2009-08-14'], ['21 1 2010 ', '2010-01-21'], ['6 .1 .2010', '2010-01-06'], ['2008-01-15', '2008-01-15']])
+      assert(birthdayInfo(raw)?.date.toISOString().slice(0, 10) === iso, `${raw} parsed wrong`);
+    for(const raw of ['200888', '110.7.2009', '31.02.2009', '1.13.2009']) assert(birthdayInfo(raw) === null, `${raw} accepted`);
+  });
+  await check('student page shows a real date for DD.MM.YYYY dob', async () => {
+    const j = await mkUser('joudtest', { dob: '31.10.2009', subcourses: [sub._id] });
+    const res = await call('GET', `/dashboard/students/${j._id}`, { cookie: admin });
+    assert(res.status === 200 && !res.text.includes('Invalid Date') && res.text.includes('2009'), 'bad date shown');
+  });
+  await check('dashboard hides students without a phone number', async () => {
+    const { insertedId } = await User.collection.insertOne({ name: 'nophonebuyer', email: 'np@t.com', password: 'x', active: true, role: 'user', subcourses: [sub._id], dob: '01.01.2009' });
+    const res = await call('GET', '/dashboard', { cookie: admin });
+    assert(res.status === 200 && !res.text.includes('nophonebuyer') && res.text.includes('alphaone'), 'no-phone student listed');
+    await User.collection.deleteOne({ _id: insertedId });
   });
   const { insertedId: legacyId } = await User.collection.insertOne({ name: 'legacyold', email: 'legacy@t.com', password: 'x', active: true, role: 'user', subcourses: [], value: 50 });
   const legacy = `jwtStudyou=${jwt.sign({ id: legacyId }, process.env.JWT_SECRET_KEY)}`;

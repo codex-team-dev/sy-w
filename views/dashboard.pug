@@ -67,7 +67,7 @@ block content
               article.birthday-card(class=b.days === 0 ? 'is-today' : '')
                 .birthday-when
                   strong= b.days === 0 ? 'اليوم' : b.days === 1 ? 'غدا' : `بعد ${b.days} أيام`
-                  span= formatDate(b.student.dob).replace(/\s*\d{4}$/, '')
+                  span= formatDate(b.date).replace(/\s*\d{4}$/, '')
                 .birthday-body
                   a.student-link(href=`/dashboard/students/${b.student._id}`)= b.student.name
                   span.muted يكمل #{b.age} سنة

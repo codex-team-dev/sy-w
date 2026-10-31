@@ -60,10 +60,10 @@ block content
           div
             span.muted تاريخ الميلاد
             if birthday
-              strong= formatDate(student.dob)
+              strong= formatDate(birthday.date)
               span.muted= birthday.days === 0 ? `عيد ميلاده اليوم (${birthday.age} سنة)` : `العمر ${birthday.ageNow} سنة · عيد الميلاد بعد ${birthday.days} يوم`
             else
-              strong —
+              strong= student.dob || '—'
 
       section.dash-section
         h2.section-title
