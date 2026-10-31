@@ -17,7 +17,8 @@ const PAGE_SIZE = 30;
 const BIRTHDAY_DAYS = 7;
 const TIME_ZONE = 'Asia/Damascus';
 const STUDENT = { role: { $nin: ['admin', 'supervisor'] } };
-const BUYER = { 'subcourses.0': { $exists: true } };
+// bought a course that still exists, and has a phone number
+const buyerScope = async () => ({ subcourses: { $in: await Subcourse.distinct('_id') }, studentId: { $type: 'string', $ne: '' } });
 const STUDENT_FIELDS = 'name email studentId parentPhone dob value subcourses active';
 
 const notFound = () => new AppError('هذا الطالب غير موجود', 404);
@@ -42,14 +43,14 @@ const todayParts = () => {
 const pad = n => String(n).padStart(2, '0');
 const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
-// dob is 'YYYY-MM-DD' from <input type=date>
-// sign-up stores DD.MM.YYYY; some older accounts have YYYY-MM-DD
+// dob is free text on older accounts: 31.10.2009, 4.1.2009, 17/12/2008, 2009.8.14, 2008-01-15, '21 1 2010 '
 const parseDob = dob => {
-  const s = String(dob || '');
-  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if(iso) return { y: +iso[1], m: +iso[2], d: +iso[3] };
-  const dotted = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s);
-  return dotted ? { y: +dotted[3], m: +dotted[2], d: +dotted[1] } : null;
+  const parts = String(dob || '').trim().split(/\s*[.\-\/\s]\s*/).filter(Boolean);
+  if(parts.length !== 3 || parts.some(x => !/^\d+$/.test(x))) return null;
+  const n = parts.map(Number);
+  const [y, m, d] = parts[0].length === 4 ? n : parts[2].length === 4 ? [n[2], n[1], n[0]] : [];
+  if(!y || m < 1 || m > 12 || d < 1 || new Date(Date.UTC(y, m - 1, d)).getUTCDate() !== d) return null;
+  return { y, m, d };
 };
 
 // days until the next birthday (0 = today) and the age reached on it
@@ -61,25 +62,7 @@ const birthdayInfo = dob => {
   const dateIn = y => Date.UTC(y, b.m - 1, b.m === 2 && b.d === 29 && !isLeap(y) ? 28 : b.d);
   let year = t.y;
   if(dateIn(year) < today) year++;
-  return { days: Math.round((dateIn(year) - today) / 86400000), age: year - b.y, ageNow: year - b.y - (dateIn(year) === today ? 0 : 1) };
-};
-
-// '-MM-DD' endings of the next n days (Feb 29 birthdays are shown on Feb 28 in other years)
-const comingDayEndings = n => {
-  const t = todayParts();
-  const endings = [];
-  for(let i = 0; i < n; i++) {
-    const date = new Date(Date.UTC(t.y, t.m - 1, t.d + i));
-    const m = date.getUTCMonth() + 1, d = date.getUTCDate();
-    endings.push(`${pad(m)}-${pad(d)}`);
-    if(m === 2 && d === 28 && !isLeap(date.getUTCFullYear())) endings.push('02-29');
-  }
-  return endings;
-};
-
-const birthdayRegex = endings => {
-  const dotted = endings.map(e => { const [m, d] = e.split('-'); return `0?${+d}\\.0?${+m}\\.`; });
-  return `-(${endings.join('|')})$|^(${dotted.join('|')})\\d{4}$`;
+  return { days: Math.round((dateIn(year) - today) / 86400000), age: year - b.y, ageNow: year - b.y - (dateIn(year) === today ? 0 : 1), date: new Date(Date.UTC(b.y, b.m - 1, b.d, 12)) };
 };
 
 /* ------------------------------ pages ------------------------------ */
@@ -91,7 +74,7 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
   // what the viewer may see, then the chosen group / search inside it
-  const scope = { ...STUDENT, ...BUYER };
+  const scope = { ...STUDENT, ...await buyerScope() };
   if(group) scope._id = { $in: group.students };
   else if(!isAdmin(user)) scope._id = { $in: allowedIds(groups) };
   const filter = { ...scope };
@@ -100,7 +83,7 @@ exports.getDashboard = catchAsync(async function(req, res, next) {
   const [total, students, birthdays] = await Promise.all([
     User.countDocuments(filter),
     User.find(filter).select(STUDENT_FIELDS).sort('name').skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE),
-    User.find({ ...scope, dob: { $regex: birthdayRegex(comingDayEndings(BIRTHDAY_DAYS)) } }).select('name studentId parentPhone dob')
+    User.find({ ...scope, dob: { $type: 'string' } }).select('name studentId parentPhone dob')
   ]);
 
   const ids = students.map(s => s._id);
