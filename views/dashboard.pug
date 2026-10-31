@@ -1,0 +1,129 @@
+extends _layout
+include _mixins
+
+mixin phoneLinks(phone, label)
+  if phone
+    .phone-links
+      a.phone-link(href=`tel:${phone}` title=`اتصال ${label}`)
+        i.fa-solid.fa-phone
+        span= phone
+      a.icon-btn.whatsapp(href=`https://wa.me/963${phone.slice(1)}` target='_blank' rel='noopener' title=`واتساب ${label}` aria-label=`واتساب ${label}`)
+        i.fa-brands.fa-whatsapp
+  else
+    span.muted —
+
+block content
+  main.anki-page.dashboard-page
+    .page-hero.hero-dashboard
+      div
+        h1 لوحة الطلاب
+        p= user.role === 'admin' ? 'كل الطلاب، علاماتهم وتقدمهم في الكورسات' : 'طلاب مجموعاتك، علاماتهم وتقدمهم في الكورسات'
+      if user.role === 'admin'
+        a.btn.btn-light(href='/dashboard/groups')
+          i.fa-solid.fa-people-group
+          |  المجموعات والمشرفين
+
+    .stats-row
+      .stat-card
+        .stat-icon
+          i.fa-solid.fa-user-graduate
+        div
+          strong= total
+          span= q ? 'نتيجة البحث' : 'طالب'
+      .stat-card
+        .stat-icon.green
+          i.fa-solid.fa-people-group
+        div
+          strong= groups.length
+          span مجموعة
+      .stat-card
+        .stat-icon.amber
+          i.fa-solid.fa-cake-candles
+        div
+          strong= birthdays.length
+          span عيد ميلاد خلال 7 أيام
+
+    if user.role !== 'admin' && !groups.length
+      +emptyState('fa-people-group', 'لا توجد مجموعات بعد', 'ستظهر هنا مجموعات الطلاب التي يعطيك الادمن صلاحيتها')
+    else
+      nav.group-chips(aria-label='المجموعات')
+        a.chip(href=`/dashboard${q ? `?q=${encodeURIComponent(q)}` : ''}` class=!group ? 'active' : '')= user.role === 'admin' ? 'كل الطلاب' : 'كل مجموعاتي'
+        each g in groups
+          a.chip(href=`/dashboard?group=${g._id}${q ? `&q=${encodeURIComponent(q)}` : ''}` class=group && group._id.equals(g._id) ? 'active' : '')
+            | #{g.name}
+            span.chip-count= g.students.length
+
+      if birthdays.length
+        section.dash-section
+          h2.section-title
+            i.fa-solid.fa-cake-candles
+            |  أعياد الميلاد القادمة
+          .birthday-list
+            each b in birthdays
+              article.birthday-card(class=b.days === 0 ? 'is-today' : '')
+                .birthday-when
+                  strong= b.days === 0 ? 'اليوم' : b.days === 1 ? 'غدا' : `بعد ${b.days} أيام`
+                  span= formatDate(b.student.dob).replace(/\s*\d{4}$/, '')
+                .birthday-body
+                  a.student-link(href=`/dashboard/students/${b.student._id}`)= b.student.name
+                  span.muted يكمل #{b.age} سنة
+                .birthday-calls
+                  a.btn-chip(href=`tel:${b.student.studentId}` title='اتصال بالطالب')
+                    i.fa-solid.fa-phone
+                    |  الطالب
+                  a.btn-chip(href=`tel:${b.student.parentPhone}` title='اتصال بولي الأمر')
+                    i.fa-solid.fa-phone
+                    |  ولي الأمر
+
+      section.dash-section
+        .toolbar
+          h2= group ? group.name : 'الطلاب'
+          form.search-box(method='get' action='/dashboard' role='search')
+            if group
+              input(type='hidden' name='group' value=group._id)
+            i.fa-solid.fa-magnifying-glass
+            input(type='search' name='q' value=q placeholder='ابحث بالاسم أو رقم الهاتف' aria-label='بحث عن طالب' maxlength='40')
+
+        if rows.length
+          .table-wrap.card-table
+            table.dash-table
+              thead
+                tr
+                  th الطالب
+                  th هاتف الطالب
+                  th هاتف ولي الأمر
+                  th الكورسات
+                  th اختبارات الدروس
+                  th الاختبارات العامة
+              tbody
+                each r in rows
+                  tr
+                    td
+                      a.student-link(href=`/dashboard/students/${r.student._id}`)= r.student.name
+                      if !r.student.active
+                        span.status-badge.is-banned موقوف
+                      if r.groups.length && !group
+                        .row-groups= r.groups.join('، ')
+                    td
+                      +phoneLinks(r.student.studentId, 'الطالب')
+                    td
+                      +phoneLinks(r.student.parentPhone, 'ولي الأمر')
+                    td= r.courses
+                    td
+                      if r.quiz.count
+                        span.mark(class=r.quiz.avg >= 70 ? 'good' : r.quiz.avg >= 50 ? 'mid' : 'low')= `${r.quiz.avg}%`
+                        span.muted  (#{r.quiz.count} محاولة)
+                      else
+                        span.muted —
+                    td= r.tests || '—'
+
+          if pages > 1
+            - const link = p => `/dashboard?${new URLSearchParams({ ...(group ? { group: String(group._id) } : {}), ...(q ? { q } : {}), page: p })}`
+            nav.pager(aria-label='الصفحات')
+              if page > 1
+                a.btn.btn-ghost(href=link(page - 1)) السابق
+              span.pager-info صفحة #{page} من #{pages}
+              if page < pages
+                a.btn.btn-ghost(href=link(page + 1)) التالي
+        else
+          p.no-results= q ? 'لا يوجد طالب بهذا الاسم أو الرقم' : group ? 'لا يوجد طلاب في هذه المجموعة بعد' : 'لا يوجد طلاب بعد'

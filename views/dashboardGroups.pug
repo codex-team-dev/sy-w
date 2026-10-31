@@ -1,0 +1,94 @@
+extends _layout
+include _mixins
+
+block content
+  main.anki-page.dashboard-page#groups-page
+    .container-narrow
+      a.back-link(href='/dashboard')
+        i.fa-solid.fa-arrow-right
+        |  لوحة الطلاب
+
+      .page-hero.hero-dashboard.compact
+        div
+          h1 المجموعات والمشرفين
+          p قسّم الطلاب إلى مجموعات، وأعطِ كل مشرف صلاحية مجموعات معينة. المشرف يرى كامل معلومات طلاب مجموعاته فقط.
+        button.btn.btn-light#new-group-btn(type='button')
+          i.fa-solid.fa-plus
+          |  مجموعة جديدة
+
+      section.dash-section
+        .toolbar
+          h2
+            i.fa-solid.fa-user-tie
+            |  المشرفون
+          button.btn.btn-primary#new-supervisor-btn(type='button')
+            i.fa-solid.fa-user-plus
+            |  إضافة مشرف
+        if supervisors.length
+          .chips-wrap
+            each s in supervisors
+              span.person-chip
+                | #{s.name}
+                button.chip-remove.demote-btn(type='button' data-user-id=s._id data-name=s.name title='إلغاء صلاحية المشرف' aria-label=`إلغاء صلاحية ${s.name}`)
+                  i.fa-solid.fa-xmark
+        else
+          p.muted-note لا يوجد مشرفون بعد. أضف مشرفا باسم حسابه أو رقم هاتفه.
+
+      section.dash-section
+        h2.section-title
+          i.fa-solid.fa-people-group
+          |  المجموعات
+        if groups.length
+          .group-admin-list
+            each g in groups
+              article.card.group-admin(data-group-id=g._id data-name=g.name)
+                .group-admin-head
+                  div
+                    h3= g.name
+                    .test-meta
+                      span #{g.students.length} طالب
+                      span #{g.supervisors.length} مشرف
+                  .test-item-actions
+                    a.icon-btn(href=`/dashboard?group=${g._id}` title='عرض الطلاب' aria-label='عرض الطلاب')
+                      i.fa-solid.fa-chart-line
+                    button.icon-btn.rename-group-btn(type='button' title='تعديل الاسم' aria-label='تعديل اسم المجموعة')
+                      i.fa-solid.fa-pen
+                    button.icon-btn.danger.delete-group-btn(type='button' title='حذف' aria-label='حذف المجموعة')
+                      i.fa-solid.fa-trash
+
+                .group-admin-row
+                  strong المشرفون:
+                  .chips-wrap
+                    each s in g.supervisors
+                      span.person-chip
+                        | #{s.name}
+                        button.chip-remove.remove-supervisor-btn(type='button' data-user-id=s._id title='سحب الصلاحية' aria-label=`سحب صلاحية ${s.name}`)
+                          i.fa-solid.fa-xmark
+                    if supervisors.length
+                      button.btn-chip.add-supervisor-btn(type='button')
+                        i.fa-solid.fa-plus
+                        |  مشرف
+                    else if !g.supervisors.length
+                      span.muted —
+
+                details.group-students
+                  summary الطلاب (#{g.students.length})
+                  .chips-wrap
+                    each s in g.students
+                      span.person-chip
+                        a(href=`/dashboard/students/${s._id}`)= s.name
+                        button.chip-remove.remove-student-btn(type='button' data-user-id=s._id title='إخراج من المجموعة' aria-label=`إخراج ${s.name}`)
+                          i.fa-solid.fa-xmark
+                button.btn.btn-ghost.add-students-btn(type='button')
+                  i.fa-solid.fa-user-plus
+                  |  إضافة طلاب
+        else
+          +emptyState('fa-people-group', 'لا توجد مجموعات بعد', 'أنشئ مجموعة ثم أضف إليها الطلاب')
+
+      //- supervisors list for the "add supervisor" dialog
+      template#supervisors-data
+        each s in supervisors
+          option(value=s._id)= s.name
+
+block scripts
+  script(src='/js/dashboard.js')

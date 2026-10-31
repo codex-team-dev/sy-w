@@ -36,6 +36,8 @@ body(data-domain= domain)
         a.section-button.section-button-3(role='button') &#x639;&#x646; &#x627;&#x644;&#x645;&#x62F;&#x631;&#x633;
         a.nav-ext-link(href='/anki') البطاقات
         a.nav-ext-link(href='/tests') الاختبارات
+        - if(user && (user.role === 'admin' || user.role === 'supervisor'))
+          a.nav-ext-link(href='/dashboard') لوحة الطلاب
         - if(user)
           a.settings-btn(role='button') اعدادات الحساب
       - if(!user)
@@ -59,6 +61,8 @@ body(data-domain= domain)
       a.section-button.section-button-3(role="button") &#x639;&#x646; &#x627;&#x644;&#x645;&#x62F;&#x631;&#x633;
       a.nav-ext-link(href='/anki') البطاقات
       a.nav-ext-link(href='/tests') الاختبارات
+      - if(user && (user.role === 'admin' || user.role === 'supervisor'))
+        a.nav-ext-link(href='/dashboard') لوحة الطلاب
       - if(user)
         a.settings-btn(role="button") اعدادات الحساب
   // Main Content
